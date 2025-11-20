@@ -245,7 +245,7 @@ npm run dev
 ```
 
 ## Usage 🎯
-1. Open your browser and navigate to `http://localhost:3001`
+1. Open your browser and navigate to `http://localhost:3000`
 2. Enter a topic you want to explore in the search bar
 3. Watch as the AI generates connections and builds your exploration map
 4. Click on nodes to dive deeper into subtopics
