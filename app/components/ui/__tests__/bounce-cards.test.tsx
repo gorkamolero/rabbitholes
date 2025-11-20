@@ -3,10 +3,16 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { BounceCards } from '../bounce-cards'
 import '@testing-library/jest-dom/vitest'
 
+// Mock Next.js Image
+vi.mock('next/image', () => ({
+  default: ({ src, alt, ...props }: any) => <img src={src} alt={alt} {...props} />,
+}))
+
 // Mock GSAP
 vi.mock('gsap', () => ({
   gsap: {
     to: vi.fn(),
+    fromTo: vi.fn(),
   },
 }))
 

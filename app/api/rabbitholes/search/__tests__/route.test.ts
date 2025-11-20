@@ -34,9 +34,9 @@ vi.mock('@tavily/core', () => ({
   }),
 }))
 
-// Mock the OpenAI service
-vi.mock('@/app/services/openaiService', () => ({
-  getOpenAIService: () => ({
+// Mock the AI service
+vi.mock('@/app/services/aiService', () => ({
+  getAIService: () => ({
     createChatCompletion: vi.fn().mockResolvedValue({
       choices: [
         {
@@ -54,6 +54,7 @@ Follow-up Questions:
 2. What are the ethical implications of AI?
 3. Could AI surpass human intelligence?`,
           },
+          finish_reason: 'stop',
         },
       ],
     }),

@@ -4,7 +4,7 @@ import MainNode from '../MainNode'
 import '@testing-library/jest-dom/vitest'
 
 // Mock React Flow
-vi.mock('reactflow', () => ({
+vi.mock('@xyflow/react', () => ({
   Handle: ({ type, position }: any) => <div data-testid={`handle-${type}`} />,
   Position: {
     Left: 'left',
