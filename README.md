@@ -1,31 +1,34 @@
 # 🐰 Open Source RabbitHole - Knowledge Explorer
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/gorkamolero/rabbitholes)
+
+**✨ Now powered by Next.js 15!**
 
 ## 🚀 Quick Deploy
 
-### Railway Deployment
+### Vercel Deployment (Recommended)
 
-1. Click the "Deploy on Railway" button above
-2. Set up your environment variables in Railway:
+1. Click the "Deploy with Vercel" button above
+2. Set up your environment variables in Vercel:
    ```
-   TAVILY_API_KEY=your_tavily_api_key
    GOOGLE_AI_API_KEY=your_google_ai_api_key
+   TAVILY_API_KEY=your_tavily_api_key
+   NEXT_PUBLIC_POSTHOG_KEY=your_posthog_key (optional)
+   NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com (optional)
    ```
-3. Railway will automatically detect the Dockerfile and deploy your application
+3. Deploy! Vercel will automatically detect the Next.js app and deploy it
 
 ## 🛠️ Local Development
 
 ### Prerequisites
 - Node.js 18 or higher
 - npm or yarn
-- Docker (optional)
 
 ### Setup
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/rabbitholes.git
+git clone https://github.com/gorkamolero/rabbitholes.git
 cd rabbitholes
 ```
 
@@ -34,78 +37,64 @@ cd rabbitholes
 npm install
 ```
 
-3. Create environment files:
-
-For backend (backend/.env):
+3. Create a `.env.local` file in the root directory:
 ```env
-PORT=3000
-TAVILY_API_KEY=your_tavily_api_key
 GOOGLE_AI_API_KEY=your_google_ai_api_key
+TAVILY_API_KEY=your_tavily_api_key
+NEXT_PUBLIC_POSTHOG_KEY=your_posthog_key
+NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
 ```
 
-For frontend (frontend/.env.development):
-```env
-REACT_APP_API_URL=http://localhost:3000/api
-```
-
-4. Start development servers:
+4. Start the development server:
 ```bash
-# Start both frontend and backend in development mode
 npm run dev
-
-# Or start them separately
-npm run frontend:dev
-npm run backend:dev
 ```
 
-## 🐳 Docker Development
-
-1. Build the Docker image:
-```bash
-docker build -t rabbitholes .
-```
-
-2. Run the container:
-```bash
-docker run -p 3000:3000 \
-  -e TAVILY_API_KEY=your_tavily_api_key \
-  -e GOOGLE_AI_API_KEY=your_google_ai_api_key \
-  rabbitholes
-```
-
-Or using docker-compose:
-
-```bash
-docker-compose up
-```
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ## 📦 Project Structure
 
 ```
 rabbitholes/
-├── frontend/              # React frontend
-│   ├── src/
-│   ├── public/
-│   └── package.json
-├── backend/              # Express backend
-│   ├── src/
-│   └── package.json
-├── Dockerfile           # Production Dockerfile
-├── docker-compose.yml   # Docker compose configuration
-└── package.json        # Root package.json for workspace
+├── app/                      # Next.js App Router
+│   ├── api/                 # API routes
+│   │   ├── health/         # Health check endpoint
+│   │   └── rabbitholes/    # Search API
+│   ├── components/         # React components
+│   │   ├── nodes/          # Custom React Flow nodes
+│   │   └── ui/             # UI components
+│   ├── services/           # Services (API, OpenAI)
+│   ├── layout.tsx          # Root layout
+│   ├── page.tsx            # Home page
+│   ├── providers.tsx       # PostHog provider
+│   └── globals.css         # Global styles
+├── public/                  # Static assets
+├── next.config.ts          # Next.js configuration
+├── tailwind.config.ts      # Tailwind CSS configuration
+└── package.json            # Dependencies and scripts
 ```
 
 ## 🔑 Environment Variables
 
-### Backend Variables
-- `PORT` - Server port (default: 3000)
-- `TAVILY_API_KEY` - Your Tavily API key
-- `GOOGLE_AI_API_KEY` - Your Google AI API key
+### Required
+- `GOOGLE_AI_API_KEY` - Your Google AI API key (for Gemini)
+- `TAVILY_API_KEY` - Your Tavily Search API key
 
-### Frontend Variables
-- `REACT_APP_API_URL` - Backend API URL
-  - Development: http://localhost:3000/api
-  - Production: /api
+### Optional (Analytics)
+- `NEXT_PUBLIC_POSTHOG_KEY` - PostHog analytics key
+- `NEXT_PUBLIC_POSTHOG_HOST` - PostHog host URL (default: https://app.posthog.com)
+
+## 🏗️ Built With
+
+- **Next.js 15** - React framework with App Router
+- **React 18** - UI library
+- **TypeScript** - Type safety
+- **Tailwind CSS** - Styling
+- **React Flow** - Interactive node-based UI
+- **GSAP** - Advanced animations
+- **Google Gemini** - AI-powered content generation
+- **Tavily** - Web search and research
+- **PostHog** - Analytics (optional)
 
 ## 📝 License
 
