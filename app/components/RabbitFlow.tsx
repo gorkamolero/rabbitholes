@@ -6,6 +6,7 @@ import {
   Node,
   Edge,
   NodeTypes,
+  EdgeTypes,
   useNodesState,
   useEdgesState,
   ConnectionLineType,
@@ -19,6 +20,7 @@ import { CanvasContextMenu } from './canvas/CanvasContextMenu';
 import { NodeType } from '../lib/nodeTypes';
 import { useRabbitFlowHandlers } from '../hooks/useRabbitFlowHandlers';
 import { FlowConfig } from './RabbitFlow/FlowConfig';
+import { ContextualEdge } from './edges/ContextualEdge';
 
 interface RabbitFlowProps {
   initialNodes: Node[];
@@ -77,6 +79,10 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
   });
 
   return { nodes: newNodes, edges };
+};
+
+const edgeTypes: EdgeTypes = {
+  contextual: ContextualEdge,
 };
 
 const RabbitFlowInner: React.FC<RabbitFlowProps> = ({
@@ -159,6 +165,7 @@ const RabbitFlowInner: React.FC<RabbitFlowProps> = ({
             onNodeClick={handleNodeClick}
             onPaneClick={handlePaneClick}
             nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
             connectionLineType={ConnectionLineType.SmoothStep}
             defaultEdgeOptions={{
               animated: true,

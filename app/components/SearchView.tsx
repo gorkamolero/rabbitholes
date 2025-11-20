@@ -17,12 +17,15 @@ import { SaveStatusIndicator } from './SearchView/SaveStatusIndicator';
 import { nodeTypes } from './SearchView/nodeTypes';
 import type { ConversationMessage } from './SearchView/types';
 import { NodeType } from '../lib/nodeTypes';
+import { SuggestionPanel, type Suggestion } from './ai/SuggestionPanel';
+import { CanvasSearch } from './search/CanvasSearch';
 
 const SearchView: React.FC = () => {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
   const [_isLoading, setIsLoading] = useState(false);
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
 
   // Custom hooks
   const { explorationMode, setExplorationMode, getFollowUpMode } = useExplorationMode('hybrid');
@@ -111,6 +114,20 @@ const SearchView: React.FC = () => {
     handleCreateNode(nodeType, position);
   };
 
+  // Suggestion panel handlers
+  const handleAcceptSuggestion = (suggestion: Suggestion) => {
+    console.log('Accepted suggestion:', suggestion);
+    // TODO: Implement suggestion acceptance logic
+  };
+
+  const handleDismissSuggestion = (suggestion: Suggestion) => {
+    console.log('Dismissed suggestion:', suggestion);
+  };
+
+  const handleRefreshSuggestions = () => {
+    console.log('Refresh suggestions requested');
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Toolbar
@@ -147,6 +164,17 @@ const SearchView: React.FC = () => {
         suggestions={suggestions}
         isLoadingSuggestions={isLoadingSuggestions}
       />
+
+      {/* AI Suggestion Panel */}
+      <SuggestionPanel
+        currentNode={selectedNode}
+        onAccept={handleAcceptSuggestion}
+        onDismiss={handleDismissSuggestion}
+        onRefresh={handleRefreshSuggestions}
+      />
+
+      {/* Canvas Search (Cmd+K) */}
+      <CanvasSearch nodes={nodes} />
     </div>
   );
 };
