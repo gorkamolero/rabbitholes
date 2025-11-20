@@ -1,6 +1,6 @@
 'use client';
 
-import { type NodeProps, Position, useReactFlow } from '@xyflow/react';
+import { type NodeProps, type Node, Position, useReactFlow } from '@xyflow/react';
 import { BaseNode, BaseNodeContent, BaseNodeFooter, BaseNodeHeader, BaseNodeHeaderTitle } from '@/app/components/base-node';
 import { LabeledHandle } from '@/app/components/labeled-handle';
 import { Button } from '@/app/components/ui/button';
@@ -8,13 +8,15 @@ import { Input } from '@/app/components/ui/input';
 import { useState, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 
-interface ChatNodeData {
+interface ChatNodeDataType extends Record<string, unknown> {
   label: string;
   conversationThread?: Array<{ role: string; content: string }>;
   systemPrompt?: string;
 }
 
-export function ChatNode({ id, data }: NodeProps<ChatNodeData>) {
+type ChatNodeType = Node<ChatNodeDataType>;
+
+export function ChatNode({ id, data }: NodeProps<ChatNodeType>) {
   const { updateNodeData } = useReactFlow();
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);

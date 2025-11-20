@@ -1,6 +1,6 @@
 'use client';
 
-import { type NodeProps, Position, useReactFlow } from '@xyflow/react';
+import { type NodeProps, type Node, Position, useReactFlow } from '@xyflow/react';
 import { BaseNode, BaseNodeContent, BaseNodeFooter, BaseNodeHeader } from '@/app/components/base-node';
 import { LabeledHandle } from '@/app/components/labeled-handle';
 import { Input } from '@/app/components/ui/input';
@@ -10,12 +10,14 @@ import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Edit3, Check, FileText } from 'lucide-react';
 
-interface NoteNodeData {
+interface NoteNodeDataType extends Record<string, unknown> {
   label: string;
   content?: string;
 }
 
-export function NoteNode({ id, data }: NodeProps<NoteNodeData>) {
+type NoteNodeType = Node<NoteNodeDataType>;
+
+export function NoteNode({ id, data }: NodeProps<NoteNodeType>) {
   const { updateNodeData } = useReactFlow();
   const [isEditing, setIsEditing] = useState(false);
   const [content, setContent] = useState(data.content || '');

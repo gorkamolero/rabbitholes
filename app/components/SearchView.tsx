@@ -149,15 +149,15 @@ const SearchView: React.FC = () => {
     const abortController = new AbortController();
     activeRequestRef.current[node.id] = abortController;
 
-    const questionText = node.data.label;
+    const questionText = String(node.data.label || '');
     setIsLoading(true);
 
     try {
       const lastMainNode = nodes.find(n => n.type === 'mainNode');
       if (lastMainNode) {
         const newHistoryEntry: ConversationMessage = {
-          user: lastMainNode.data.label,
-          assistant: lastMainNode.data.content
+          user: String(lastMainNode.data.label || ''),
+          assistant: String(lastMainNode.data.content || '')
         };
         setConversationHistory(prev => [...prev, newHistoryEntry]);
       }
@@ -296,7 +296,7 @@ const SearchView: React.FC = () => {
       ]).flat();
 
       const response = await getSuggestions({
-        query: modalSourceNode.data.label,
+        query: String(modalSourceNode.data.label || ''),
         conversationHistory: historyForSuggestions,
         mode: 'expansive'
       });
@@ -323,8 +323,8 @@ const SearchView: React.FC = () => {
     try {
       // Update conversation history with the source node's content
       const newHistoryEntry: ConversationMessage = {
-        user: modalSourceNode.data.label,
-        assistant: modalSourceNode.data.content
+        user: String(modalSourceNode.data.label || ''),
+        assistant: String(modalSourceNode.data.content || '')
       };
       setConversationHistory(prev => [...prev, newHistoryEntry]);
 

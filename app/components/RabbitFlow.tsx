@@ -97,8 +97,8 @@ const RabbitFlowInner: React.FC<RabbitFlowProps> = ({
   onConnectEnd,
   onCreateNodeAtPosition
 }) => {
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(initialEdges);
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
