@@ -33,6 +33,7 @@ interface RabbitFlowProps {
   onNodeClick?: (node: Node) => void;
   onConnectEnd?: (event: MouseEvent | TouchEvent, connectionState: { fromNode: Node | null }) => void;
   onCreateNodeAtPosition?: (type: NodeType, position: { x: number; y: number }) => void;
+  selectedNodeType?: NodeType | null;
 }
 
 const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
@@ -95,7 +96,8 @@ const RabbitFlowInner: React.FC<RabbitFlowProps> = ({
   nodeTypes,
   onNodeClick,
   onConnectEnd,
-  onCreateNodeAtPosition
+  onCreateNodeAtPosition,
+  selectedNodeType
 }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(initialEdges);
@@ -182,6 +184,21 @@ const RabbitFlowInner: React.FC<RabbitFlowProps> = ({
     [nodes, onConnectEnd]
   );
 
+  // Handle click-to-create when in crosshair mode
+  const handlePaneClick = useCallback(
+    (event: React.MouseEvent) => {
+      if (!selectedNodeType || !onCreateNodeAtPosition) return;
+
+      const flowPosition = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+
+      onCreateNodeAtPosition(selectedNodeType, flowPosition);
+    },
+    [selectedNodeType, onCreateNodeAtPosition, screenToFlowPosition]
+  );
+
   return (
     <div ref={reactFlowWrapper} style={{ width: '100vw', height: '100vh' }}>
       <CanvasContextMenu
@@ -197,6 +214,7 @@ const RabbitFlowInner: React.FC<RabbitFlowProps> = ({
             onConnect={onConnect}
             onConnectEnd={handleConnectEnd}
             onNodeClick={handleNodeClick}
+            onPaneClick={handlePaneClick}
             nodeTypes={nodeTypes}
             connectionLineType={ConnectionLineType.SmoothStep}
             defaultEdgeOptions={{
@@ -222,7 +240,10 @@ const RabbitFlowInner: React.FC<RabbitFlowProps> = ({
             preventScrolling={false}
             panOnDrag={true}
             zoomOnDoubleClick={false}
-            style={{ backgroundColor: '#000000' }}
+            style={{
+              backgroundColor: '#000000',
+              cursor: selectedNodeType ? 'crosshair' : 'default'
+            }}
           >
             <Controls
               className="!bg-[#111111] !border-gray-800"

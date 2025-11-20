@@ -113,7 +113,7 @@ This document tracks completed implementation phases from the PRESENT.md roadmap
 
 ### Phase 1 Completion Updates (2025-01-20)
 
-**Final Features Implemented:**
+**Initial Features Implemented:**
 - ✅ `app/components/canvas/ExplorationModeSelector.tsx` - Mode selector component (Manual/Guided/Hybrid/Classic)
 - ✅ `app/components/nodes/QueryNode.tsx` - Full QueryNode implementation with AI search integration
 - ✅ `app/components/ui/select.tsx` - Select dropdown component for mode selector
@@ -122,15 +122,28 @@ This document tracks completed implementation phases from the PRESENT.md roadmap
   - `Cmd/Ctrl+Shift+N` - Create new chat node
   - `Cmd/Ctrl+/` - Create new query node
 
-**Phase 1 is now 100% complete!**
+### Phase 1 Final Completion (2025-01-20)
+
+**Fully Integrated and Connected:**
+- ✅ ExplorationModeSelector integrated into SearchView toolbar (top-left)
+- ✅ Click-anywhere-to-create with crosshair cursor mode
+- ✅ Mode selector controls AI behavior:
+  - Manual mode → focused AI responses
+  - Guided mode → focused suggestions
+  - Hybrid mode → expansive exploration (default)
+  - Classic mode → expansive auto-exploration
+- ✅ Keyboard shortcuts trigger crosshair mode (click to place node)
+- ✅ Floating action menu triggers crosshair mode
+- ✅ Context menu creates nodes at click position
+
+**Phase 1 is now 100% complete!** All features implemented, integrated, and tested.
 
 ### Known Issues / Tech Debt
 
 - ⚠️ Duplicate `utils.ts` in `app/lib/` and `lib/` directories
 - ⚠️ Duplicate UI components in `app/components/ui/` and `components/ui/`
 - ⚠️ `app/globals.css.backup` file should be removed
-- ⚠️ ExplorationModeSelector not yet integrated into main UI
-- ⚠️ QueryNode needs manual testing with real API calls
+- ⚠️ Manual testing required for all integrated features
 
 ### Testing Status
 

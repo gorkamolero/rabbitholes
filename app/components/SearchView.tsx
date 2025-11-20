@@ -13,6 +13,7 @@ import { NodeCreationModal } from './NodeCreationModal';
 import { CanvasManager } from './CanvasManager';
 import { EmptyCanvasWelcome } from './canvas/EmptyCanvasWelcome';
 import { FloatingActionMenu } from './canvas/FloatingActionMenu';
+import { ExplorationModeSelector, type ExplorationMode } from './canvas/ExplorationModeSelector';
 import { useCurrentCanvas, useAutoSave } from '../hooks/useCanvasSync';
 import { createCanvas, loadCanvasState } from '../lib/db/repository';
 import { NodeType } from '../lib/nodeTypes';
@@ -117,6 +118,28 @@ const SearchView: React.FC = () => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
 
+  // Exploration mode
+  const [explorationMode, setExplorationMode] = useState<ExplorationMode>('hybrid');
+
+  // Click-to-create mode
+  const [selectedNodeType, setSelectedNodeType] = useState<NodeType | null>(null);
+
+  // Map exploration mode to AI follow-up mode
+  const getFollowUpMode = () => {
+    switch (explorationMode) {
+      case 'manual':
+        return 'focused'; // More specific, user-directed
+      case 'guided':
+        return 'focused'; // AI suggests specific paths
+      case 'hybrid':
+        return 'expansive'; // Mix of breadth and depth
+      case 'classic':
+        return 'expansive'; // Original auto-exploration
+      default:
+        return 'expansive';
+    }
+  };
+
   // Canvas persistence
   const { currentCanvasId, setCurrentCanvasId } = useCurrentCanvas();
   const { saving, lastSaved } = useAutoSave(currentCanvasId, nodes, edges, {
@@ -212,7 +235,7 @@ const SearchView: React.FC = () => {
         query: questionText,
         previousConversation: conversationHistory,
         concept: currentConcept,
-        followUpMode: 'expansive'
+        followUpMode: getFollowUpMode()
       }, abortController.signal);
 
       if (activeRequestRef.current[node.id] === abortController) {
@@ -286,23 +309,28 @@ const SearchView: React.FC = () => {
 
   // Handle manual node creation
   const handleCreateNode = (nodeType: NodeType, position?: { x: number; y: number }) => {
+    // If no position provided, enter crosshair mode for click-to-place
+    if (!position) {
+      setSelectedNodeType(nodeType);
+      return;
+    }
+
     const nodeId = `${nodeType}-${Date.now()}`;
     const newNode: Node = {
       id: nodeId,
       type: nodeType,
       data: {
-        label: nodeType === NodeType.NOTE ? 'Untitled Note' : 'New Chat',
+        label: nodeType === NodeType.NOTE ? 'Untitled Note' :
+               nodeType === NodeType.CHAT ? 'New Chat' :
+               nodeType === NodeType.QUERY ? 'Research Query' : 'New Node',
         content: '',
         conversationThread: [],
       },
-      position: position || {
-        // Center of viewport if no position provided
-        x: window.innerWidth / 2 - 200,
-        y: window.innerHeight / 2 - 200,
-      },
+      position,
     };
 
     setNodes((prevNodes) => [...prevNodes, newNode]);
+    setSelectedNodeType(null); // Clear crosshair mode
   };
 
   // Handle node creation at specific position (from context menu)
@@ -486,7 +514,7 @@ const SearchView: React.FC = () => {
         query,
         previousConversation: conversationHistory,
         concept: currentConcept,
-        followUpMode: 'expansive'
+        followUpMode: getFollowUpMode()
       });
       setSearchResult(response);
 
@@ -526,12 +554,19 @@ const SearchView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <CanvasManager
-        currentCanvasId={currentCanvasId}
-        onLoadCanvas={handleLoadCanvas}
-        onNewCanvas={handleNewCanvas}
-        onSaveAs={handleSaveAs}
-      />
+      {/* Top toolbar */}
+      <div className="fixed top-4 left-4 z-50 flex items-center gap-3">
+        <CanvasManager
+          currentCanvasId={currentCanvasId}
+          onLoadCanvas={handleLoadCanvas}
+          onNewCanvas={handleNewCanvas}
+          onSaveAs={handleSaveAs}
+        />
+        <ExplorationModeSelector
+          value={explorationMode}
+          onChange={setExplorationMode}
+        />
+      </div>
       {/* Save Status Indicator */}
       {currentCanvasId && (
         <div className="fixed bottom-6 right-6 z-40 px-4 py-2 bg-[#1a1a1a] border border-gray-700 rounded-lg text-sm text-white/60 flex items-center gap-2">
@@ -555,6 +590,7 @@ const SearchView: React.FC = () => {
         onNodeClick={handleNodeClick}
         onConnectEnd={handleConnectEnd}
         onCreateNodeAtPosition={handleCreateNodeAtPosition}
+        selectedNodeType={selectedNodeType}
       />
 
       {/* Show welcome screen when canvas is empty */}

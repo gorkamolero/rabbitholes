@@ -84,17 +84,20 @@ This document provides a complete, ordered implementation roadmap for transformi
 - ✅ Floating action menu (+) button
 - ✅ Multiple node types: ChatNode, NoteNode, QueryNode, MainNode
 - ✅ Node type registry with metadata (app/lib/nodeTypes.ts)
-- ✅ Complete shadcn/ui component library (15+ components)
+- ✅ Complete shadcn/ui component library (16+ components)
 - ✅ Theme provider with dark mode support
 - ✅ Infinite canvas with pan/zoom controls
 - ✅ Enhanced CanvasManager with Toast notifications
+- ✅ **ExplorationModeSelector integrated in toolbar**
+- ✅ **Click-anywhere-to-create with crosshair cursor**
+- ✅ **Keyboard shortcuts (Cmd+N, Cmd+Shift+N, Cmd+/)**
+- ✅ **Mode selector controls AI behavior**
+- ✅ **Full QueryNode with search execution**
 
 ### Known Tech Debt:
 - ⚠️ Duplicate utils.ts in app/lib/ and lib/
 - ⚠️ Duplicate UI components in app/components/ui/ and components/ui/
-- ⚠️ QueryNode needs full implementation
-- ⚠️ ExplorationModeSelector not yet implemented
-- ⚠️ Keyboard shortcuts not yet implemented
+- ⚠️ Manual testing required for integrated features
 
 ---
 
