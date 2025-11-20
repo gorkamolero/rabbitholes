@@ -19,4 +19,13 @@ export const searchRabbitHole = async (params: {
     return response.data;
 };
 
+export const getSuggestions = async (params: {
+    query: string;
+    conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>;
+    mode?: 'expansive' | 'focused';
+}) => {
+    const response = await api.post('/rabbitholes/suggestions', params);
+    return response.data;
+};
+
 export default api;

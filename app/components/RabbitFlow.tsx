@@ -27,6 +27,7 @@ interface RabbitFlowProps {
   initialEdges: Edge[];
   nodeTypes: NodeTypes;
   onNodeClick?: (node: Node) => void;
+  onConnectEnd?: (event: MouseEvent | TouchEvent, connectionState: { fromNode: Node | null }) => void;
 }
 
 const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
@@ -87,7 +88,8 @@ const RabbitFlow: React.FC<RabbitFlowProps> = ({
   initialNodes,
   initialEdges,
   nodeTypes,
-  onNodeClick
+  onNodeClick,
+  onConnectEnd
 }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -136,6 +138,19 @@ const RabbitFlow: React.FC<RabbitFlowProps> = ({
     [onNodeClick, posthog]  // important: add posthog to dependency array
   );
 
+  const handleConnectEnd = useCallback(
+    (event: MouseEvent | TouchEvent, connectionState: any) => {
+      // Only trigger if connection didn't complete to another node
+      if (!connectionState.isValid && connectionState.fromNode) {
+        const fromNode = nodes.find(n => n.id === connectionState.fromNode.nodeId);
+        if (fromNode && onConnectEnd) {
+          onConnectEnd(event, { fromNode });
+        }
+      }
+    },
+    [nodes, onConnectEnd]
+  );
+
   return (
     <div style={{ width: '100vw', height: '100vh' }}>
       <ReactFlow
@@ -144,6 +159,7 @@ const RabbitFlow: React.FC<RabbitFlowProps> = ({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onConnectEnd={handleConnectEnd}
         onNodeClick={handleNodeClick}
         nodeTypes={nodeTypes}
         connectionLineType={ConnectionLineType.SmoothStep}
