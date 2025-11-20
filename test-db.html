@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RabbitHoles DB Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #0A0A0A;
+      color: #fff;
+    }
+    .test-result {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+    .success {
+      background: #1a4d1a;
+      border: 1px solid #2d7d2d;
+    }
+    .error {
+      background: #4d1a1a;
+      border: 1px solid #7d2d2d;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    #results {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>RabbitHoles IndexedDB Test</h1>
+  <p>This page tests the IndexedDB persistence layer without needing to run the full Next.js app.</p>
+
+  <div>
+    <button onclick="runTests()">Run All Tests</button>
+    <button onclick="clearResults()">Clear Results</button>
+  </div>
+
+  <div id="results"></div>
+
+  <script type="module">
+    import Dexie from 'https://cdn.jsdelivr.net/npm/dexie@3.2.4/+esm';
+
+    // Simple schema for testing
+    class TestDB extends Dexie {
+      constructor() {
+        super('RabbitHolesDB');
+        this.version(1).stores({
+          canvases: 'id, name, updatedAt, createdAt',
+          nodes: 'id, canvasId, type, updatedAt, createdAt, [canvasId+type]',
+          edges: 'id, canvasId, source, target, updatedAt, createdAt, [canvasId+source], [canvasId+target]',
+          settings: 'key, updatedAt'
+        });
+      }
+    }
+
+    const db = new TestDB();
+
+    function log(message, type = 'info') {
+      const results = document.getElementById('results');
+      const div = document.createElement('div');
+      div.className = `test-result ${type}`;
+      div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      results.appendChild(div);
+      console.log(message);
+    }
+
+    async function clearResults() {
+      document.getElementById('results').innerHTML = '';
+    }
+
+    async function runTests() {
+      clearResults();
+      log('Starting tests...', 'info');
+
+      try {
+        // Test 1: Database initialization
+        log('Test 1: Initializing database...', 'info');
+        await db.open();
+        log('✓ Database initialized successfully', 'success');
+
+        // Test 2: Create canvas
+        log('Test 2: Creating canvas...', 'info');
+        const canvas = {
+          id: `canvas_${Date.now()}`,
+          name: 'Test Canvas',
+          description: 'A test canvas',
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        };
+        await db.canvases.add(canvas);
+        log(`✓ Canvas created: ${canvas.id}`, 'success');
+
+        // Test 3: Read canvas
+        log('Test 3: Reading canvas...', 'info');
+        const retrieved = await db.canvases.get(canvas.id);
+        if (retrieved && retrieved.name === 'Test Canvas') {
+          log('✓ Canvas retrieved successfully', 'success');
+        } else {
+          throw new Error('Canvas retrieval failed');
+        }
+
+        // Test 4: Create nodes
+        log('Test 4: Creating nodes...', 'info');
+        const node1 = {
+          id: 'node-1',
+          canvasId: canvas.id,
+          type: 'mainNode',
+          position: { x: 0, y: 0 },
+          data: { label: 'Test Node', content: 'Test content' },
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        };
+        await db.nodes.add(node1);
+        log('✓ Node created successfully', 'success');
+
+        // Test 5: Query nodes by canvas
+        log('Test 5: Querying nodes by canvas...', 'info');
+        const nodes = await db.nodes.where('canvasId').equals(canvas.id).toArray();
+        if (nodes.length === 1) {
+          log(`✓ Found ${nodes.length} node(s) for canvas`, 'success');
+        } else {
+          throw new Error(`Expected 1 node, found ${nodes.length}`);
+        }
+
+        // Test 6: Create edge
+        log('Test 6: Creating edge...', 'info');
+        const edge = {
+          id: 'edge-1',
+          canvasId: canvas.id,
+          source: 'node-1',
+          target: 'node-2',
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        };
+        await db.edges.add(edge);
+        log('✓ Edge created successfully', 'success');
+
+        // Test 7: List all canvases
+        log('Test 7: Listing all canvases...', 'info');
+        const allCanvases = await db.canvases.orderBy('updatedAt').reverse().toArray();
+        log(`✓ Found ${allCanvases.length} canvas(es)`, 'success');
+
+        // Test 8: Update canvas
+        log('Test 8: Updating canvas...', 'info');
+        await db.canvases.update(canvas.id, { name: 'Updated Test Canvas', updatedAt: Date.now() });
+        const updated = await db.canvases.get(canvas.id);
+        if (updated && updated.name === 'Updated Test Canvas') {
+          log('✓ Canvas updated successfully', 'success');
+        } else {
+          throw new Error('Canvas update failed');
+        }
+
+        // Test 9: Delete canvas and related data
+        log('Test 9: Deleting canvas and related data...', 'info');
+        await db.transaction('rw', [db.canvases, db.nodes, db.edges], async () => {
+          await db.canvases.delete(canvas.id);
+          await db.nodes.where('canvasId').equals(canvas.id).delete();
+          await db.edges.where('canvasId').equals(canvas.id).delete();
+        });
+        const deleted = await db.canvases.get(canvas.id);
+        if (!deleted) {
+          log('✓ Canvas and related data deleted successfully', 'success');
+        } else {
+          throw new Error('Canvas deletion failed');
+        }
+
+        // Test 10: Database info
+        log('Test 10: Getting database info...', 'info');
+        const canvasCount = await db.canvases.count();
+        const nodeCount = await db.nodes.count();
+        const edgeCount = await db.edges.count();
+        log(`✓ Database stats: ${canvasCount} canvases, ${nodeCount} nodes, ${edgeCount} edges`, 'success');
+
+        log('========================================', 'info');
+        log('All tests passed! ✓', 'success');
+        log('========================================', 'info');
+
+      } catch (error) {
+        log(`✗ Test failed: ${error.message}`, 'error');
+        console.error(error);
+      }
+    }
+
+    // Make runTests available globally
+    window.runTests = runTests;
+    window.clearResults = clearResults;
+
+    // Auto-run tests on load
+    log('Page loaded. Click "Run All Tests" to begin.', 'info');
+  </script>
+</body>
+</html>
