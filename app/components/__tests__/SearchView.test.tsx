@@ -206,4 +206,62 @@ describe('SearchView Component', () => {
     expect(githubLink).toHaveAttribute('target', '_blank')
     expect(githubLink).toHaveAttribute('rel', 'noopener noreferrer')
   })
+
+  it('maintains all edges when expanding multiple nodes sequentially', async () => {
+    // This test ensures the fix for stale edge state closure bug
+    // Previously, expanding a second node would overwrite edges from the first expansion
+    const firstSearchResult = {
+      ...mockSearchResult,
+      response: 'First response',
+      followUpQuestions: ['Question 1A', 'Question 1B', 'Question 1C'],
+    }
+
+    const secondSearchResult = {
+      ...mockSearchResult,
+      response: 'Second response',
+      followUpQuestions: ['Question 2A', 'Question 2B', 'Question 2C'],
+    }
+
+    mockSearchRabbitHole
+      .mockResolvedValueOnce(firstSearchResult)
+      .mockResolvedValueOnce(secondSearchResult)
+
+    render(<SearchView />)
+
+    // Initial search
+    const searchInput = screen.getByPlaceholderText(/ask your question/i)
+    fireEvent.change(searchInput, { target: { value: 'initial query' } })
+    const searchButton = screen.getByRole('button')
+    fireEvent.click(searchButton)
+
+    // Wait for first search to complete
+    await waitFor(() => {
+      const nodesCount = screen.getByTestId('nodes-count')
+      expect(parseInt(nodesCount.textContent || '0')).toBe(4) // 1 main + 3 follow-ups
+    })
+
+    // Verify first set of edges (3 edges from main to follow-ups)
+    await waitFor(() => {
+      const edgesCount = screen.getByTestId('edges-count')
+      expect(parseInt(edgesCount.textContent || '0')).toBe(3)
+    })
+
+    // Click on a follow-up question to expand it
+    const firstFollowUpNode = screen.getByTestId('node-question-0')
+    fireEvent.click(firstFollowUpNode)
+
+    // Wait for second expansion to complete
+    await waitFor(() => {
+      const nodesCount = screen.getByTestId('nodes-count')
+      // Should now have: 1 original main + 3 first follow-ups + 3 new follow-ups = 7 nodes
+      expect(parseInt(nodesCount.textContent || '0')).toBe(7)
+    })
+
+    // CRITICAL: Verify edges are accumulated, not overwritten
+    // Should have: 3 edges from first expansion + 3 edges from second expansion = 6 edges
+    await waitFor(() => {
+      const edgesCount = screen.getByTestId('edges-count')
+      expect(parseInt(edgesCount.textContent || '0')).toBe(6)
+    })
+  })
 })
