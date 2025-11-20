@@ -202,6 +202,24 @@ PostHog captures:
 - **GSAP** for high-performance animations
 - **Vercel AI SDK 6** (not actively used, but available)
 
+## Code Quality Standards
+
+### Component Size Rule
+
+**Maximum component size: 200 lines**
+
+Components should be focused, single-responsibility modules. If a component exceeds 200 lines:
+
+1. Extract custom hooks for complex state logic
+2. Extract handler functions into separate modules
+3. Split into smaller sub-components
+4. Move business logic to utility functions
+
+Run this check before committing:
+```bash
+find app/components -name "*.tsx" -type f -exec wc -l {} + | awk '$1 > 200 {print $2 " has " $1 " lines (max 200)"}'
+```
+
 ## Important Notes
 
 - **Git config:** Default repo is `gorkamolero/rabbitholes` (not the upstream fork)
