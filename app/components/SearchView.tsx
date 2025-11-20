@@ -101,15 +101,15 @@ const SearchView: React.FC = () => {
 
   // Handle manual node creation
   const handleCreateNode = (nodeType: NodeType, position?: { x: number; y: number }) => {
-    // If no position provided, enter crosshair mode for click-to-place
-    if (!position) {
-      setSelectedNodeType(nodeType);
-      return;
-    }
+    // If no position provided, create at default center position
+    const defaultPosition = position || {
+      x: window.innerWidth / 2 - 150,  // Center horizontally (node width ~300px)
+      y: window.innerHeight / 2 - 50   // Center vertically (node height ~100px)
+    };
 
-    const newNode = createNodeFromType(nodeType, position);
+    const newNode = createNodeFromType(nodeType, defaultPosition);
     setNodes((prevNodes) => [...prevNodes, newNode]);
-    setSelectedNodeType(null); // Clear crosshair mode
+    setSelectedNodeType(null); // Clear crosshair mode if it was set
   };
 
   // Handle node creation at specific position (from context menu)
