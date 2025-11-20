@@ -11,6 +11,7 @@
   "dependencies": {
     "@dagrejs/dagre": "^1.1.4",
     "@tavily/core": "^0.0.2",
+    "@xyflow/react": "^12.9.3",
     "ai": "^6.0.0-beta.102",
     "axios": "^1.6.7",
     "d3-hierarchy": "^3.1.2",
@@ -20,8 +21,7 @@
     "posthog-js": "^1.236.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-markdown": "^9.0.1",
-    "reactflow": "^11.10.1"
+    "react-markdown": "^9.0.1"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.10",

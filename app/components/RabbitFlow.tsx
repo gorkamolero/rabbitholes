@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useCallback } from 'react';
-import ReactFlow, {
+import {
+  ReactFlow,
   Node,
   Edge,
   NodeTypes,
@@ -15,9 +16,9 @@ import ReactFlow, {
   Position,
   MiniMap,
   Connection,
-} from 'reactflow';
+} from '@xyflow/react';
 import dagre from '@dagrejs/dagre';
-import 'reactflow/dist/style.css';
+import '@xyflow/react/dist/style.css';
 
 import { usePostHog } from 'posthog-js/react';
 

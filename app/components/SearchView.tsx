@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Node, Edge, MarkerType, Position } from 'reactflow';
+import { Node, Edge, MarkerType, Position } from '@xyflow/react';
 import dagre from 'dagre';
 import gsap from 'gsap';
 import RabbitFlow from './RabbitFlow';

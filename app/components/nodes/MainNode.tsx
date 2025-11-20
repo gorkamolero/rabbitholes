@@ -2,7 +2,7 @@
 
 import React, { memo } from 'react';
 import Image from 'next/image';
-import { Handle, Position, NodeProps } from 'reactflow';
+import { Handle, Position, NodeProps } from '@xyflow/react';
 import ReactMarkdown from 'react-markdown';
 import { BounceCards } from '../ui/bounce-cards';
 
