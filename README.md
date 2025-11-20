@@ -133,22 +133,17 @@ Built with React, Node.js, and powered by a combination of Tavily and Google AI,
 - AI-powered content generation and connections
 - Beautiful, fluid UI with React Flow
 - Real-time topic exploration and visualization
-- Seamless backend integration with OpenAI
+- AI integration with Vercel AI SDK and OpenRouter
 
 ## Tech Stack 💻
 
-### Frontend
+- Next.js 15 (App Router)
 - React
 - TypeScript
 - React Flow
 - Tailwind CSS
-- Dagre (for graph layouts)
-
-### Backend
-- Node.js
-- Express
-- TypeScript
-- OpenAI API integration
+- Vercel AI SDK 6 with OpenRouter
+- Tavily Search API
 
 ## Architecture 🏗️
 Potential production architecture for the project.
@@ -227,33 +222,19 @@ cd rabbitholes
 
 2. Install dependencies
 ```bash
-# Install root dependencies
-npm install
-
-# Install frontend dependencies
-cd frontend
-npm install
-
-# Install backend dependencies
-cd ../backend
 npm install
 ```
 
 3. Set up environment variables
 ```bash
-# In backend/.env
-PORT=3000
-TAVILY_API_KEY= your_tavily_api_key
-GOOGLE_AI_API_KEY= your_google_api_key
+# Create .env.local file
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+TAVILY_API_KEY=your_tavily_api_key_here
 ```
 
-4. Start the development servers
+4. Start the development server
 ```bash
-# Start backend (from backend directory)
 npm run dev
-
-# Start frontend (from frontend directory)
-npm start
 ```
 
 ## Usage 🎯
