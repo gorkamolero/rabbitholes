@@ -6,11 +6,16 @@ import dagre from 'dagre';
 import gsap from 'gsap';
 import RabbitFlow from './RabbitFlow';
 import MainNode from './nodes/MainNode';
+import { ChatNode } from './nodes/ChatNode';
+import { NoteNode } from './nodes/NoteNode';
 import { searchRabbitHole, getSuggestions } from '../services/api';
 import { NodeCreationModal } from './NodeCreationModal';
 import { CanvasManager } from './CanvasManager';
+import { EmptyCanvasWelcome } from './canvas/EmptyCanvasWelcome';
+import { FloatingActionMenu } from './canvas/FloatingActionMenu';
 import { useCurrentCanvas, useAutoSave } from '../hooks/useCanvasSync';
 import { createCanvas, loadCanvasState } from '../lib/db/repository';
+import { NodeType } from '../lib/nodeTypes';
 
 const dagreGraph = new dagre.graphlib.Graph();
 dagreGraph.setDefaultEdgeLabel(() => ({}));
@@ -91,6 +96,8 @@ interface ConversationMessage {
 
 const nodeTypes = {
   mainNode: MainNode,
+  chat: ChatNode,
+  note: NoteNode,
 };
 
 const useDeckHoverAnimation = (deckRef: React.RefObject<HTMLDivElement | null>) => {
@@ -420,6 +427,27 @@ const SearchView: React.FC = () => {
       setIsModalOpen(true);
       setSuggestions([]);
     }
+  };
+
+  // Handle manual node creation
+  const handleCreateNode = (nodeType: NodeType) => {
+    const nodeId = `${nodeType}-${Date.now()}`;
+    const newNode: Node = {
+      id: nodeId,
+      type: nodeType,
+      data: {
+        label: nodeType === NodeType.NOTE ? 'Untitled Note' : 'New Chat',
+        content: '',
+        conversationThread: [],
+      },
+      position: {
+        // Center of viewport - will be adjusted by ReactFlow
+        x: window.innerWidth / 2 - 200,
+        y: window.innerHeight / 2 - 200,
+      },
+    };
+
+    setNodes((prevNodes) => [...prevNodes, newNode]);
   };
 
   const handleRequestSuggestions = async () => {
@@ -816,6 +844,15 @@ const SearchView: React.FC = () => {
         onNodeClick={handleNodeClick}
         onConnectEnd={handleConnectEnd}
       />
+
+      {/* Show welcome screen when canvas is empty */}
+      {nodes.length === 0 && (
+        <EmptyCanvasWelcome onAction={handleCreateNode} />
+      )}
+
+      {/* Floating action menu - always visible */}
+      <FloatingActionMenu onCreateNode={handleCreateNode} />
+
       <NodeCreationModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
