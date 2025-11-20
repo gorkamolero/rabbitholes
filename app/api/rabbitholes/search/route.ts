@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { tavily } from "@tavily/core";
-import { getOpenAIService } from "@/app/services/openaiService";
-import OpenAI from "openai";
+import { getAIService } from "@/app/services/aiService";
 
 interface RabbitHoleSearchRequest {
     query: string;
@@ -61,7 +60,7 @@ export async function POST(req: NextRequest) {
 
         const messages = [
             {
-                role: "system",
+                role: "system" as const,
                 content: `You are an AI assistant that helps users explore topics in depth. Format your responses using markdown with headers (####).
 
 Your goal is to provide comprehensive, accurate information while maintaining engagement.
@@ -72,7 +71,7 @@ One of the questions should be a question that is related to the search results,
 `,
             },
             {
-                role: "user",
+                role: "user" as const,
                 content: `Previous conversation:\n${conversationContext}\n\nSearch results about "${query}":\n${JSON.stringify(
                     searchResults
                 )}\n\nPlease provide a comprehensive response about ${
@@ -83,8 +82,8 @@ One of the questions should be a question that is related to the search results,
             },
         ];
 
-        const openAIService = getOpenAIService();
-        const completion = (await openAIService.createChatCompletion(messages, "gemini")) as OpenAI.Chat.ChatCompletion;
+        const aiService = getAIService();
+        const completion = await aiService.createChatCompletion(messages);
         const response = completion.choices?.[0]?.message?.content ?? "";
 
         // Extract follow-up questions more precisely by looking for the section
@@ -102,7 +101,12 @@ One of the questions should be a question that is related to the search results,
         // Remove the Follow-up Questions section from the main response
         const mainResponse = response.split("Follow-up Questions:")[0].trim();
 
-        const sources = searchResults.results.map((result: any) => ({
+        const sources = searchResults.results.map((result: {
+            title?: string;
+            url?: string;
+            author?: string;
+            image?: string;
+        }) => ({
             title: result.title || "",
             url: result.url || "",
             uri: result.url || "",
@@ -111,7 +115,10 @@ One of the questions should be a question that is related to the search results,
         }));
 
         const images = searchResults.images
-            .map((result: any) => ({
+            .map((result: {
+                url: string;
+                description?: string;
+            }) => ({
                 url: result.url,
                 thumbnail: result.url,
                 description: result.description || "",

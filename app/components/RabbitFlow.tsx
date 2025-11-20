@@ -98,7 +98,7 @@ const RabbitFlow: React.FC<RabbitFlowProps> = ({
     );
     setNodes(layoutedNodes);
     setEdges(layoutedEdges);
-  }, [initialNodes, initialEdges]);
+  }, [initialNodes, initialEdges, setNodes, setEdges]);
 
   const onConnect = useCallback(
     (params: Connection) =>

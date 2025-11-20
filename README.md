@@ -133,22 +133,17 @@ Built with React, Node.js, and powered by a combination of Tavily and Google AI,
 - AI-powered content generation and connections
 - Beautiful, fluid UI with React Flow
 - Real-time topic exploration and visualization
-- Seamless backend integration with OpenAI
+- AI integration with Vercel AI SDK and OpenRouter
 
 ## Tech Stack 💻
 
-### Frontend
+- Next.js 15 (App Router)
 - React
 - TypeScript
 - React Flow
 - Tailwind CSS
-- Dagre (for graph layouts)
-
-### Backend
-- Node.js
-- Express
-- TypeScript
-- OpenAI API integration
+- Vercel AI SDK 6 with OpenRouter
+- Tavily Search API
 
 ## Architecture 🏗️
 Potential production architecture for the project.
@@ -227,37 +222,30 @@ cd rabbitholes
 
 2. Install dependencies
 ```bash
-# Install root dependencies
-npm install
-
-# Install frontend dependencies
-cd frontend
-npm install
-
-# Install backend dependencies
-cd ../backend
 npm install
 ```
 
 3. Set up environment variables
 ```bash
-# In backend/.env
-PORT=3000
-TAVILY_API_KEY= your_tavily_api_key
-GOOGLE_AI_API_KEY= your_google_api_key
+# Copy the example file
+cp .env.local.example .env.local
+
+# Edit .env.local and add your API keys:
+# OPENROUTER_API_KEY=your_actual_openrouter_key
+# TAVILY_API_KEY=your_actual_tavily_key
 ```
 
-4. Start the development servers
-```bash
-# Start backend (from backend directory)
-npm run dev
+Get your API keys:
+- OpenRouter: https://openrouter.ai/
+- Tavily: https://tavily.com/
 
-# Start frontend (from frontend directory)
-npm start
+4. Start the development server
+```bash
+npm run dev
 ```
 
 ## Usage 🎯
-1. Open your browser and navigate to `http://localhost:3001`
+1. Open your browser and navigate to `http://localhost:3000`
 2. Enter a topic you want to explore in the search bar
 3. Watch as the AI generates connections and builds your exploration map
 4. Click on nodes to dive deeper into subtopics

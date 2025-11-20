@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useCallback, useState } from "react"
+import Image from 'next/image'
 import { gsap } from "gsap"
 import { Modal } from "./Modal"
 
@@ -37,6 +38,28 @@ export function BounceCards({
   useEffect(() => {
     setValidImages(images);
   }, [images]);
+
+  useEffect(() => {
+    if (validImages.length > 0) {
+      gsap.fromTo(
+        ".card",
+        {
+          opacity: 0,
+          scale: 0.5,
+          y: 50
+        },
+        {
+          opacity: 1,
+          scale: 1,
+          y: 0,
+          duration: 0.8,
+          ease: easeType,
+          delay: animationDelay,
+          stagger: animationStagger
+        }
+      );
+    }
+  }, [validImages, animationDelay, animationStagger, easeType]);
 
   const handleMouseEnter = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     gsap.to(e.currentTarget, {
@@ -85,11 +108,12 @@ export function BounceCards({
             onMouseLeave={handleMouseLeave}
             onClick={() => handleImageClick(src)}
           >
-            <img
+            <Image
               className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
               src={src}
               alt={`card-${idx}`}
-              loading="lazy"
+              fill
+              sizes="(max-width: 768px) 100vw, 400px"
               onError={() => handleImageError(src)}
             />
           </div>
@@ -100,11 +124,15 @@ export function BounceCards({
         onClose={() => setSelectedImage(null)}
       >
         {selectedImage && (
-          <img
-            src={selectedImage}
-            alt="Selected"
-            className="max-w-full max-h-[85vh] object-contain rounded-lg"
-          />
+          <div className="relative w-full h-[85vh]">
+            <Image
+              src={selectedImage}
+              alt="Selected"
+              fill
+              className="object-contain rounded-lg"
+              sizes="100vw"
+            />
+          </div>
         )}
       </Modal>
     </>

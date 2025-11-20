@@ -1,6 +1,7 @@
 'use client';
 
 import React, { memo } from 'react';
+import Image from 'next/image';
 import { Handle, Position, NodeProps } from 'reactflow';
 import ReactMarkdown from 'react-markdown';
 import { BounceCards } from '../ui/bounce-cards';
@@ -43,9 +44,6 @@ const MainNode = ({ data }: NodeProps<MainNodeData>) => {
             images={data.images.slice(0, 5)}
             containerWidth={500}
             containerHeight={120}
-            animationDelay={0.3}
-            animationStagger={0.1}
-            easeType="elastic.out(1, 0.7)"
             transformStyles={transformStyles}
             className="pl-48 transform scale-90"
           />
@@ -99,9 +97,11 @@ const MainNode = ({ data }: NodeProps<MainNodeData>) => {
                       className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-800 transition-colors group break-all"
                     >
                       <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-gray-800 rounded overflow-hidden">
-                        <img
+                        <Image
                           src={getFaviconUrl(source.url)}
                           alt=""
+                          width={16}
+                          height={16}
                           className="w-4 h-4 group-hover:scale-110 transition-transform"
                           onError={(e) => {
                             const img = e.target as HTMLImageElement;
