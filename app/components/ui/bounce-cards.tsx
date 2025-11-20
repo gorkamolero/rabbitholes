@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useCallback, useState } from "react"
+import Image from 'next/image'
 import { gsap } from "gsap"
 import { Modal } from "./Modal"
 
@@ -9,9 +10,6 @@ interface BounceCardsProps {
   images?: string[]
   containerWidth?: number
   containerHeight?: number
-  animationDelay?: number
-  animationStagger?: number
-  easeType?: string
   transformStyles?: string[]
 }
 
@@ -20,9 +18,6 @@ export function BounceCards({
   images = [],
   containerWidth = 400,
   containerHeight = 400,
-  animationDelay = 0.5,
-  animationStagger = 0.06,
-  easeType = "elastic.out(1, 0.8)",
   transformStyles = [
     "rotate(10deg) translate(-170px)",
     "rotate(5deg) translate(-85px)",
@@ -85,11 +80,12 @@ export function BounceCards({
             onMouseLeave={handleMouseLeave}
             onClick={() => handleImageClick(src)}
           >
-            <img
+            <Image
               className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
               src={src}
               alt={`card-${idx}`}
-              loading="lazy"
+              fill
+              sizes="(max-width: 768px) 100vw, 400px"
               onError={() => handleImageError(src)}
             />
           </div>
@@ -100,11 +96,15 @@ export function BounceCards({
         onClose={() => setSelectedImage(null)}
       >
         {selectedImage && (
-          <img
-            src={selectedImage}
-            alt="Selected"
-            className="max-w-full max-h-[85vh] object-contain rounded-lg"
-          />
+          <div className="relative w-full h-[85vh]">
+            <Image
+              src={selectedImage}
+              alt="Selected"
+              fill
+              className="object-contain rounded-lg"
+              sizes="100vw"
+            />
+          </div>
         )}
       </Modal>
     </>

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import ReactFlow, { Node, Edge, MarkerType, Position } from 'reactflow';
+import { Node, Edge, MarkerType, Position } from 'reactflow';
 import dagre from 'dagre';
 import gsap from 'gsap';
 import RabbitFlow from './RabbitFlow';
@@ -247,7 +247,7 @@ const SearchView: React.FC = () => {
   const [edges, setEdges] = useState<Edge[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
-  const [currentConcept, setCurrentConcept] = useState<string>('');
+  const [currentConcept] = useState<string>('');
   const activeRequestRef = useRef<{ [key: string]: AbortController | null }>({});
 
   const thothDeckRef = useRef<HTMLDivElement>(null);
@@ -273,7 +273,9 @@ const SearchView: React.FC = () => {
 
   useEffect(() => {
     return () => {
-      Object.values(activeRequestRef.current).forEach(controller => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      const currentControllers = activeRequestRef.current;
+      Object.values(currentControllers).forEach(controller => {
         if (controller) {
           controller.abort();
         }
