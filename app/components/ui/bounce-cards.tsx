@@ -10,6 +10,9 @@ interface BounceCardsProps {
   images?: string[]
   containerWidth?: number
   containerHeight?: number
+  animationDelay?: number
+  animationStagger?: number
+  easeType?: string
   transformStyles?: string[]
 }
 
@@ -18,6 +21,9 @@ export function BounceCards({
   images = [],
   containerWidth = 400,
   containerHeight = 400,
+  animationDelay = 0.5,
+  animationStagger = 0.06,
+  easeType = "elastic.out(1, 0.8)",
   transformStyles = [
     "rotate(10deg) translate(-170px)",
     "rotate(5deg) translate(-85px)",

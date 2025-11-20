@@ -272,10 +272,9 @@ const SearchView: React.FC = () => {
   useDeckHoverAnimation(isisDeckRef);
 
   useEffect(() => {
+    const activeRef = activeRequestRef.current;
     return () => {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      const currentControllers = activeRequestRef.current;
-      Object.values(currentControllers).forEach(controller => {
+      Object.values(activeRef).forEach(controller => {
         if (controller) {
           controller.abort();
         }
