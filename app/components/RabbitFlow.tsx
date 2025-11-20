@@ -168,10 +168,24 @@ const RabbitFlow: React.FC<RabbitFlowProps> = ({
           style: { stroke: 'rgba(255, 255, 255, 0.3)' }
         }}
         fitView
+        // Infinite canvas configuration
+        minZoom={0.1}
+        maxZoom={2}
+        translateExtent={[
+          [-Infinity, -Infinity],
+          [Infinity, Infinity]
+        ]}
+        nodeExtent={[
+          [-Infinity, -Infinity],
+          [Infinity, Infinity]
+        ]}
+        // Pan and zoom settings
         zoomOnScroll={true}
         panOnScroll={false}
         zoomOnPinch={true}
         preventScrolling={false}
+        panOnDrag={true}
+        zoomOnDoubleClick={false}
         style={{ backgroundColor: '#000000' }}
       >
         <Controls
