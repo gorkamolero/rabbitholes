@@ -101,7 +101,12 @@ One of the questions should be a question that is related to the search results,
         // Remove the Follow-up Questions section from the main response
         const mainResponse = response.split("Follow-up Questions:")[0].trim();
 
-        const sources = searchResults.results.map((result: any) => ({
+        const sources = searchResults.results.map((result: {
+            title?: string;
+            url?: string;
+            author?: string;
+            image?: string;
+        }) => ({
             title: result.title || "",
             url: result.url || "",
             uri: result.url || "",
@@ -110,7 +115,10 @@ One of the questions should be a question that is related to the search results,
         }));
 
         const images = searchResults.images
-            .map((result: any) => ({
+            .map((result: {
+                url: string;
+                description?: string;
+            }) => ({
                 url: result.url,
                 thumbnail: result.url,
                 description: result.description || "",
