@@ -18,6 +18,7 @@ const cinzel = Cinzel({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001'),
   title: 'RabbitHoles AI Open Source | Seek Knowledge',
   description: '🐰 Open Source RabbitHole Explorer - Hop into a warren of knowledge! Chase fascinating ideas through AI-powered mind maps. Warning: Side effects may include uncontrollable curiosity and frequent \'aha!\' moments. Built with 🥕 by the community.',
   keywords: ['open source', 'rabbit hole', 'mind map', 'AI research', 'knowledge explorer', 'deep learning', 'research tool', 'knowledge graph', 'curiosity', 'exploration'],

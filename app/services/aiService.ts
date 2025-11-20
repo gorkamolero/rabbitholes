@@ -23,7 +23,7 @@ export class AIService {
     private static instance: AIService | null = null;
     private apiKey: string;
     private baseURL: string = 'https://openrouter.ai/api/v1';
-    private defaultModel: string = 'google/gemini-2.0-flash-exp:free';
+    private defaultModel: string = 'google/gemini-2.0-flash-001';
 
     private constructor() {
         const apiKey = process.env.OPENROUTER_API_KEY;

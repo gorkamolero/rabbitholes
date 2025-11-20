@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
         hostname: '**',
       },
     ],
-    unoptimized: false,
+    unoptimized: process.env.NODE_ENV === 'development',
   },
 };
 
