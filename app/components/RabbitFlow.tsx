@@ -18,7 +18,9 @@ import '@xyflow/react/dist/style.css';
 import { CanvasContextMenu } from './canvas/CanvasContextMenu';
 import { NodeType } from '../lib/nodeTypes';
 import { useRabbitFlowHandlers } from '../hooks/useRabbitFlowHandlers';
+import { useConnectionSuggestions } from '../hooks/useConnectionSuggestions';
 import { FlowConfig } from './RabbitFlow/FlowConfig';
+import { ConnectionSuggestionsOverlay } from './ai/ConnectionSuggestionsOverlay';
 
 interface RabbitFlowProps {
   initialNodes: Node[];
@@ -28,6 +30,7 @@ interface RabbitFlowProps {
   onConnectEnd?: (event: MouseEvent | TouchEvent, connectionState: { fromNode: Node | null }) => void;
   onCreateNodeAtPosition?: (type: NodeType, position: { x: number; y: number }) => void;
   selectedNodeType?: NodeType | null;
+  explorationMode?: string;
 }
 
 const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
@@ -86,7 +89,8 @@ const RabbitFlowInner: React.FC<RabbitFlowProps> = ({
   onNodeClick,
   onConnectEnd,
   onCreateNodeAtPosition,
-  selectedNodeType
+  selectedNodeType,
+  explorationMode = 'hybrid'
 }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(initialEdges);
@@ -108,6 +112,15 @@ const RabbitFlowInner: React.FC<RabbitFlowProps> = ({
     onCreateNodeAtPosition,
     selectedNodeType
   );
+
+  // Connection suggestions - INSIDE ReactFlowProvider
+  const {
+    suggestions: connectionSuggestions,
+    isLoading: isLoadingConnections,
+    acceptSuggestion,
+    dismissSuggestion,
+    refreshSuggestions,
+  } = useConnectionSuggestions(nodes, edges, explorationMode !== 'manual');
 
   React.useEffect(() => {
     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
@@ -165,6 +178,14 @@ const RabbitFlowInner: React.FC<RabbitFlowProps> = ({
             }}
           >
             <FlowConfig />
+            <ConnectionSuggestionsOverlay
+              suggestions={connectionSuggestions}
+              isLoading={isLoadingConnections}
+              onAccept={acceptSuggestion}
+              onDismiss={dismissSuggestion}
+              onRefresh={refreshSuggestions}
+              enabled={explorationMode !== 'manual'}
+            />
           </ReactFlow>
         </div>
       </CanvasContextMenu>

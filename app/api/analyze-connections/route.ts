@@ -54,11 +54,12 @@ Existing connections: ${existingConnectionsContext}
 Analyze these nodes and suggest valuable connections.`;
 
     // Call AI service
-    const response = await aiService.complete({
-      systemPrompt,
-      userPrompt,
-      temperature: 0.6,
-    });
+    const completion = await aiService.createChatCompletion([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ]);
+
+    const response = completion.choices[0]?.message?.content || '';
 
     // Parse response
     let suggestions = [];

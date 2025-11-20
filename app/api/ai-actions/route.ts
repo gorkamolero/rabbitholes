@@ -68,11 +68,12 @@ Return your response as a JSON array:
     }
 
     // Call AI service
-    const response = await aiService.complete({
-      systemPrompt,
-      userPrompt,
-      temperature: 0.7,
-    });
+    const completion = await aiService.createChatCompletion([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ]);
+
+    const response = completion.choices[0]?.message?.content || '';
 
     // For connection suggestions, try to parse JSON
     let result = response;

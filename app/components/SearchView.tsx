@@ -13,11 +13,9 @@ import { useCanvasManagement } from '../hooks/useCanvasManagement';
 import { useGraphLayout } from '../hooks/useGraphLayout';
 import { useNodeInteractions } from '../hooks/useNodeInteractions';
 import { useModalHandlers } from '../hooks/useModalHandlers';
-import { useConnectionSuggestions } from '../hooks/useConnectionSuggestions';
 import { Toolbar } from './SearchView/Toolbar';
 import { SaveStatusIndicator } from './SearchView/SaveStatusIndicator';
 import { SuggestionPanel } from './ai/SuggestionPanel';
-import { ConnectionSuggestionsOverlay } from './ai/ConnectionSuggestionsOverlay';
 import { createLoadingNode, performInitialSearch, createMainNodeFromResponse } from './SearchView/InitialSearchHandler';
 import { nodeTypes } from './SearchView/nodeTypes';
 import type { ConversationMessage, SearchResponse, ImageData } from './SearchView/types';
@@ -41,15 +39,6 @@ const SearchView: React.FC = () => {
   const { explorationMode, setExplorationMode, getFollowUpMode } = useExplorationMode('hybrid');
   const { selectedNodeType, setSelectedNodeType, createNode: createNodeFromType } = useNodeCreation();
   const { getLayoutedElements, nodeWidth, nodeHeight, questionNodeWidth } = useGraphLayout();
-
-  // Phase 2: Connection suggestions
-  const {
-    suggestions: connectionSuggestions,
-    isLoading: isLoadingConnections,
-    acceptSuggestion: acceptConnectionSuggestion,
-    dismissSuggestion: dismissConnectionSuggestion,
-    refreshSuggestions: refreshConnectionSuggestions,
-  } = useConnectionSuggestions(nodes, edges, explorationMode !== 'manual');
 
   // Canvas persistence
   const {
@@ -213,6 +202,7 @@ const SearchView: React.FC = () => {
         onConnectEnd={handleConnectEnd}
         onCreateNodeAtPosition={handleCreateNodeAtPosition}
         selectedNodeType={selectedNodeType}
+        explorationMode={explorationMode}
       />
 
       {/* Show welcome screen when canvas is empty */}
@@ -231,16 +221,6 @@ const SearchView: React.FC = () => {
         onDismiss={handleDismissSuggestion}
         onModify={handleModifySuggestion}
         explorationMode={explorationMode}
-      />
-
-      {/* Phase 2: Connection Suggestions Overlay */}
-      <ConnectionSuggestionsOverlay
-        suggestions={connectionSuggestions}
-        isLoading={isLoadingConnections}
-        onAccept={acceptConnectionSuggestion}
-        onDismiss={dismissConnectionSuggestion}
-        onRefresh={refreshConnectionSuggestions}
-        enabled={explorationMode !== 'manual'}
       />
 
       <NodeCreationModal
