@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback, useState } from "react"
+import { useEffect, useCallback, useState, useRef, memo } from "react"
 import Image from 'next/image'
 import { gsap } from "gsap"
 import { Modal } from "./Modal"
@@ -16,7 +16,7 @@ interface BounceCardsProps {
   transformStyles?: string[]
 }
 
-export function BounceCards({
+const BounceCardsComponent = ({
   className = "",
   images = [],
   containerWidth = 400,
@@ -31,16 +31,19 @@ export function BounceCards({
     "rotate(-10deg) translate(85px)",
     "rotate(2deg) translate(170px)"
   ]
-}: BounceCardsProps) {
+}: BounceCardsProps) => {
   const [validImages, setValidImages] = useState<string[]>(images);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const hasAnimated = useRef(false);
 
   useEffect(() => {
     setValidImages(images);
   }, [images]);
 
   useEffect(() => {
-    if (validImages.length > 0) {
+    // Only animate once when component first mounts with images
+    if (validImages.length > 0 && !hasAnimated.current) {
+      hasAnimated.current = true;
       gsap.fromTo(
         ".card",
         {
@@ -138,3 +141,5 @@ export function BounceCards({
     </>
   )
 }
+
+export const BounceCards = memo(BounceCardsComponent);
