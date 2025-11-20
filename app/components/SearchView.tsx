@@ -337,84 +337,89 @@ const SearchView: React.FC = () => {
       }, abortController.signal);
 
       if (activeRequestRef.current[node.id] === abortController) {
-        setNodes(prevNodes => {
-          const transformedNodes = prevNodes.map(n => {
-            if (n.id === node.id) {
-              return {
-                ...n,
-                type: 'mainNode',
-                style: {
-                  ...n.style,
-                  width: nodeWidth,
-                  minHeight: '500px',
-                  background: '#1a1a1a',
-                  opacity: 1,
-                  cursor: 'default'
-                },
-                data: {
-                  label: response.contextualQuery || questionText,
-                  content: response.response,
-                  images: response.images?.map((img: ImageData) => img.url),
-                  sources: response.sources,
-                  isExpanded: true
-                }
-              };
-            }
-            return n;
-          });
-
-          const newFollowUpNodes: Node[] = response.followUpQuestions.map((question: string, index: number) => {
-            const uniqueId = `question-${node.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${index}`;
+        // Transform the clicked node into a mainNode with the response content
+        const transformedNodes = nodes.map(n => {
+          if (n.id === node.id) {
             return {
-              id: uniqueId,
-              type: 'default',
-              data: {
-                label: question,
-                isExpanded: false,
-                content: '',
-                images: [],
-                sources: []
-              },
-              position: { x: 0, y: 0 },
+              ...n,
+              type: 'mainNode',
               style: {
-                width: questionNodeWidth,
+                ...n.style,
+                width: nodeWidth,
+                minHeight: '500px',
                 background: '#1a1a1a',
-                color: '#fff',
-                border: '1px solid #333',
-                borderRadius: '8px',
-                fontSize: '14px',
-                textAlign: 'left',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                cursor: 'pointer'
+                opacity: 1,
+                cursor: 'default'
+              },
+              data: {
+                label: response.contextualQuery || questionText,
+                content: response.response,
+                images: response.images?.map((img: ImageData) => img.url),
+                sources: response.sources,
+                isExpanded: true
               }
             };
-          });
+          }
+          return n;
+        });
 
-          const currentEdges = edges;
-          const newEdges: Edge[] = newFollowUpNodes.map((followUpNode) => ({
-            id: `edge-${followUpNode.id}`,
-            source: node.id,
-            target: followUpNode.id,
-            style: {
-              stroke: 'rgba(248, 248, 248, 0.8)',
-              strokeWidth: 1.5
+        // Create new follow-up question nodes
+        const newFollowUpNodes: Node[] = response.followUpQuestions.map((question: string, index: number) => {
+          const uniqueId = `question-${node.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${index}`;
+          return {
+            id: uniqueId,
+            type: 'default',
+            data: {
+              label: question,
+              isExpanded: false,
+              content: '',
+              images: [],
+              sources: []
             },
-            type: 'smoothstep',
-            animated: true,
-            markerEnd: {
-              type: MarkerType.ArrowClosed,
-              color: 'rgba(248, 248, 248, 0.8)'
+            position: { x: 0, y: 0 },
+            style: {
+              width: questionNodeWidth,
+              background: '#1a1a1a',
+              color: '#fff',
+              border: '1px solid #333',
+              borderRadius: '8px',
+              fontSize: '14px',
+              textAlign: 'left',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+              cursor: 'pointer'
             }
-          }));
+          };
+        });
 
-          const { nodes: finalLayoutedNodes } = getLayoutedElements(
-            [...transformedNodes, ...newFollowUpNodes],
-            [...currentEdges, ...newEdges]
-          );
+        // Create edges connecting the expanded node to its follow-up questions
+        const newEdges: Edge[] = newFollowUpNodes.map((followUpNode) => ({
+          id: `edge-${followUpNode.id}`,
+          source: node.id,
+          target: followUpNode.id,
+          style: {
+            stroke: 'rgba(248, 248, 248, 0.8)',
+            strokeWidth: 1.5
+          },
+          type: 'smoothstep',
+          animated: true,
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: 'rgba(248, 248, 248, 0.8)'
+          }
+        }));
 
-          setEdges([...currentEdges, ...newEdges]);
+        // Update edges using functional update to ensure we have the latest state
+        setEdges(prevEdges => {
+          const allEdges = [...prevEdges, ...newEdges];
 
-          return finalLayoutedNodes;
+          // Calculate layout with all nodes and updated edges
+          const allNodes = [...transformedNodes, ...newFollowUpNodes];
+          const { nodes: finalLayoutedNodes } = getLayoutedElements(allNodes, allEdges);
+
+          // Update nodes with final layout
+          setNodes(finalLayoutedNodes);
+
+          return allEdges;
         });
       }
     } catch (error: unknown) {
