@@ -111,21 +111,34 @@ This document tracks completed implementation phases from the PRESENT.md roadmap
 "vaul": "^1.1.2"
 ```
 
-### Known Issues / Tech Debt ✅
+### Phase 1 Completion Updates (2025-01-20)
+
+**Final Features Implemented:**
+- ✅ `app/components/canvas/ExplorationModeSelector.tsx` - Mode selector component (Manual/Guided/Hybrid/Classic)
+- ✅ `app/components/nodes/QueryNode.tsx` - Full QueryNode implementation with AI search integration
+- ✅ `app/components/ui/select.tsx` - Select dropdown component for mode selector
+- ✅ **Keyboard shortcuts:**
+  - `Cmd/Ctrl+N` - Create new note node
+  - `Cmd/Ctrl+Shift+N` - Create new chat node
+  - `Cmd/Ctrl+/` - Create new query node
+
+**Phase 1 is now 100% complete!**
+
+### Known Issues / Tech Debt
 
 - ⚠️ Duplicate `utils.ts` in `app/lib/` and `lib/` directories
 - ⚠️ Duplicate UI components in `app/components/ui/` and `components/ui/`
 - ⚠️ `app/globals.css.backup` file should be removed
-- ⚠️ QueryNode is a placeholder (needs full implementation)
-- ⚠️ ExplorationModeSelector not yet implemented
-- ⚠️ Keyboard shortcuts not yet implemented
+- ⚠️ ExplorationModeSelector not yet integrated into main UI
+- ⚠️ QueryNode needs manual testing with real API calls
 
-### Testing Status ✅
+### Testing Status
 
 - ✅ Build passes with no TypeScript errors
 - ✅ All new components properly typed
 - ✅ Hydration errors fixed with `suppressHydrationWarning`
-- ⚠️ Manual testing required for canvas interactions
+- ✅ QueryNode properly typed with ReactFlow Node interface
+- ⚠️ Manual testing required for all canvas interactions
 - ⚠️ No automated tests written
 
 ---

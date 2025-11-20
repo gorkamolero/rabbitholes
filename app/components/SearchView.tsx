@@ -7,6 +7,7 @@ import RabbitFlow from './RabbitFlow';
 import MainNode from './nodes/MainNode';
 import { ChatNode } from './nodes/ChatNode';
 import { NoteNode } from './nodes/NoteNode';
+import { QueryNode } from './nodes/QueryNode';
 import { searchRabbitHole, getSuggestions } from '../services/api';
 import { NodeCreationModal } from './NodeCreationModal';
 import { CanvasManager } from './CanvasManager';
@@ -97,6 +98,7 @@ const nodeTypes = {
   mainNode: MainNode,
   chat: ChatNode,
   note: NoteNode,
+  query: QueryNode,
 };
 
 const SearchView: React.FC = () => {
@@ -123,6 +125,30 @@ const SearchView: React.FC = () => {
   });
 
   // Removed deck refs and state - no longer needed
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd+N or Ctrl+N to create new note node
+      if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+        e.preventDefault();
+        handleCreateNode(NodeType.NOTE);
+      }
+      // Cmd+Shift+N or Ctrl+Shift+N to create new chat node
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'N') {
+        e.preventDefault();
+        handleCreateNode(NodeType.CHAT);
+      }
+      // Cmd+/ or Ctrl+/ to create new query node
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+        e.preventDefault();
+        handleCreateNode(NodeType.QUERY);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     const activeRef = activeRequestRef.current;
