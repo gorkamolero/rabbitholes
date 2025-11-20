@@ -1,7 +1,7 @@
 import * as React from "react"
 import { cn } from "@/app/lib/utils"
 
-interface BaseNodeProps extends React.HTMLAttributes<HTMLDivElement> {}
+type BaseNodeProps = React.HTMLAttributes<HTMLDivElement>
 
 const BaseNode = React.forwardRef<HTMLDivElement, BaseNodeProps>(
   ({ className, ...props }, ref) => {
@@ -21,7 +21,7 @@ const BaseNode = React.forwardRef<HTMLDivElement, BaseNodeProps>(
 )
 BaseNode.displayName = "BaseNode"
 
-interface BaseNodeHeaderProps extends React.HTMLAttributes<HTMLDivElement> {}
+type BaseNodeHeaderProps = React.HTMLAttributes<HTMLDivElement>
 
 const BaseNodeHeader = React.forwardRef<HTMLDivElement, BaseNodeHeaderProps>(
   ({ className, ...props }, ref) => {
@@ -36,8 +36,7 @@ const BaseNodeHeader = React.forwardRef<HTMLDivElement, BaseNodeHeaderProps>(
 )
 BaseNodeHeader.displayName = "BaseNodeHeader"
 
-interface BaseNodeHeaderTitleProps
-  extends React.HTMLAttributes<HTMLHeadingElement> {}
+type BaseNodeHeaderTitleProps = React.HTMLAttributes<HTMLHeadingElement>
 
 const BaseNodeHeaderTitle = React.forwardRef<
   HTMLHeadingElement,
@@ -56,7 +55,7 @@ const BaseNodeHeaderTitle = React.forwardRef<
 })
 BaseNodeHeaderTitle.displayName = "BaseNodeHeaderTitle"
 
-interface BaseNodeContentProps extends React.HTMLAttributes<HTMLDivElement> {}
+type BaseNodeContentProps = React.HTMLAttributes<HTMLDivElement>
 
 const BaseNodeContent = React.forwardRef<HTMLDivElement, BaseNodeContentProps>(
   ({ className, ...props }, ref) => {
@@ -71,7 +70,7 @@ const BaseNodeContent = React.forwardRef<HTMLDivElement, BaseNodeContentProps>(
 )
 BaseNodeContent.displayName = "BaseNodeContent"
 
-interface BaseNodeFooterProps extends React.HTMLAttributes<HTMLDivElement> {}
+type BaseNodeFooterProps = React.HTMLAttributes<HTMLDivElement>
 
 const BaseNodeFooter = React.forwardRef<HTMLDivElement, BaseNodeFooterProps>(
   ({ className, ...props }, ref) => {

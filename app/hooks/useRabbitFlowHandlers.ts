@@ -16,7 +16,8 @@ export function useRabbitFlowHandlers(
   const posthog = usePostHog();
 
   const handleContextMenu = useCallback((event: React.MouseEvent) => {
-    event.preventDefault();
+    // Don't prevent default - let Radix UI handle the context menu
+    // Just track the position for node creation
     setContextMenuPosition({ x: event.clientX, y: event.clientY });
   }, []);
 
@@ -67,9 +68,9 @@ export function useRabbitFlowHandlers(
   );
 
   const handleConnectEnd = useCallback(
-    (event: MouseEvent | TouchEvent, connectionState: any) => {
+    (event: MouseEvent | TouchEvent, connectionState: { isValid: boolean; fromNode: { id: string } | null }) => {
       if (!connectionState.isValid && connectionState.fromNode) {
-        const fromNode = nodes.find(n => n.id === connectionState.fromNode.id);
+        const fromNode = nodes.find(n => n.id === connectionState.fromNode?.id);
         if (fromNode && onConnectEnd) {
           onConnectEnd(event, { fromNode });
         }

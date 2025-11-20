@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Node, Edge } from '@xyflow/react';
 import RabbitFlow from './RabbitFlow';
 import { NodeCreationModal } from './NodeCreationModal';
-import { EmptyCanvasWelcome } from './canvas/EmptyCanvasWelcome';
 import { FloatingActionMenu } from './canvas/FloatingActionMenu';
 import { useExplorationMode } from '../hooks/useExplorationMode';
 import { useNodeCreation } from '../hooks/useNodeCreation';
@@ -15,20 +14,15 @@ import { useNodeInteractions } from '../hooks/useNodeInteractions';
 import { useModalHandlers } from '../hooks/useModalHandlers';
 import { Toolbar } from './SearchView/Toolbar';
 import { SaveStatusIndicator } from './SearchView/SaveStatusIndicator';
-import { createLoadingNode, performInitialSearch, createMainNodeFromResponse } from './SearchView/InitialSearchHandler';
 import { nodeTypes } from './SearchView/nodeTypes';
-import type { ConversationMessage, SearchResponse, ImageData } from './SearchView/types';
-import { createCanvas } from '../lib/db/repository';
+import type { ConversationMessage } from './SearchView/types';
 import { NodeType } from '../lib/nodeTypes';
 
 const SearchView: React.FC = () => {
-  const [query, setQuery] = useState('');
-  const [searchResult, setSearchResult] = useState<SearchResponse | null>(null);
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
-  const [currentConcept] = useState<string>('');
+  const [_isLoading, setIsLoading] = useState(false);
 
   // Custom hooks
   const { explorationMode, setExplorationMode, getFollowUpMode } = useExplorationMode('hybrid');
@@ -117,38 +111,6 @@ const SearchView: React.FC = () => {
     handleCreateNode(nodeType, position);
   };
 
-  const handleSearch = async () => {
-    if (!query.trim()) return;
-
-    try {
-      setIsLoading(true);
-      const loadingNode = createLoadingNode(query, nodeWidth, nodeHeight);
-      setNodes([loadingNode]);
-      setEdges([]);
-
-      const response = await performInitialSearch(query, conversationHistory, currentConcept, getFollowUpMode);
-      setSearchResult(response);
-
-      const mainNode = createMainNodeFromResponse(loadingNode, response, query);
-      const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements([mainNode], []);
-
-      setNodes(layoutedNodes);
-      setEdges(layoutedEdges);
-
-      // Auto-create and save as new canvas if not already saved
-      if (!currentCanvasId) {
-        const canvas = await createCanvas(query);
-        handleSaveAs(query);
-      }
-    } catch (error) {
-      console.error('Search failed:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // No need for the mystical deck UI - EmptyCanvasWelcome handles empty state
-
   return (
     <div className="min-h-screen bg-background">
       <Toolbar
@@ -173,11 +135,6 @@ const SearchView: React.FC = () => {
         onCreateNodeAtPosition={handleCreateNodeAtPosition}
         selectedNodeType={selectedNodeType}
       />
-
-      {/* Show welcome screen when canvas is empty */}
-      {nodes.length === 0 && (
-        <EmptyCanvasWelcome onAction={handleCreateNode} />
-      )}
 
       {/* Floating action menu - always visible */}
       <FloatingActionMenu onCreateNode={handleCreateNode} />
