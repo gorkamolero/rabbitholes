@@ -99,12 +99,6 @@ const nodeTypes = {
   note: NoteNode,
 };
 
-// Removed useDeckHoverAnimation and DECK_QUESTIONS - no longer needed
-
-const SearchView: React.FC = () => {
-  return questions[randomIndex];
-};
-
 const SearchView: React.FC = () => {
   const [query, setQuery] = useState('');
   const [searchResult, setSearchResult] = useState<SearchResponse | null>(null);
