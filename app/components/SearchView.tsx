@@ -89,7 +89,7 @@ const nodeTypes = {
   mainNode: MainNode,
 };
 
-const useDeckHoverAnimation = (deckRef: React.RefObject<HTMLDivElement>) => {
+const useDeckHoverAnimation = (deckRef: React.RefObject<HTMLDivElement | null>) => {
   useEffect(() => {
     if (!deckRef.current) return;
 
