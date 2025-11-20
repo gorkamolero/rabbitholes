@@ -37,7 +37,7 @@ This document provides a complete, ordered implementation roadmap for transformi
 
 **Already Implemented:**
 - ✅ Basic IndexedDB sync (useCurrentCanvas, useAutoSave)
-- ✅ Canvas Manager component
+- ✅ Canvas Manager component with Sheet/Dialog/Toast
 - ✅ Node creation modal
 - ✅ Repository functions (createCanvas, loadCanvasState)
 - ✅ Dagre layout for graph visualization
@@ -45,16 +45,25 @@ This document provides a complete, ordered implementation roadmap for transformi
 - ✅ Conversation history tracking
 - ✅ AI response generation (OpenRouter/Gemini)
 - ✅ Tavily search integration
+- ✅ **Context menu node creation (right-click canvas)**
+- ✅ **Multiple node types (Chat, Note, Query, Main)**
+- ✅ **Node type registry with metadata**
+- ✅ **Floating action menu (+) button**
+- ✅ **Empty canvas welcome screen**
+- ✅ **Complete shadcn/ui component library**
+- ✅ **Theme provider (dark mode support)**
+- ✅ **Infinite canvas with pan/zoom**
+- ✅ **Enhanced node editing (inline for NoteNode, ChatNode)**
 
-**Missing for Manual Exploration:**
-- ❌ Click-to-create nodes anywhere on canvas
-- ❌ Multiple node types (Chat, Note, Query, etc.)
+**Still Missing for Manual Exploration:**
 - ❌ AI suggestion panel (collapsible)
-- ❌ Manual connection drawing
+- ❌ Manual connection drawing with context control
 - ❌ Context control per connection
 - ❌ Node templates and macros
 - ❌ Exploration modes (Manual/Guided/Hybrid/Classic)
-- ❌ Enhanced node interaction (inline editing, branching)
+- ❌ Keyboard shortcuts (Cmd+N for new node)
+- ❌ Connection suggestions between existing nodes
+- ❌ Node branching and cloning
 
 ---
 
