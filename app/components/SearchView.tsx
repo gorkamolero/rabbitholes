@@ -13,8 +13,11 @@ import { NodeCreationModal } from './NodeCreationModal';
 import { CanvasManager } from './CanvasManager';
 import { EmptyCanvasWelcome } from './canvas/EmptyCanvasWelcome';
 import { FloatingActionMenu } from './canvas/FloatingActionMenu';
-import { ExplorationModeSelector, type ExplorationMode } from './canvas/ExplorationModeSelector';
+import { ExplorationModeSelector } from './canvas/ExplorationModeSelector';
 import { useCurrentCanvas, useAutoSave } from '../hooks/useCanvasSync';
+import { useExplorationMode } from '../hooks/useExplorationMode';
+import { useNodeCreation } from '../hooks/useNodeCreation';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { createCanvas, loadCanvasState } from '../lib/db/repository';
 import { NodeType } from '../lib/nodeTypes';
 
@@ -118,27 +121,9 @@ const SearchView: React.FC = () => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
 
-  // Exploration mode
-  const [explorationMode, setExplorationMode] = useState<ExplorationMode>('hybrid');
-
-  // Click-to-create mode
-  const [selectedNodeType, setSelectedNodeType] = useState<NodeType | null>(null);
-
-  // Map exploration mode to AI follow-up mode
-  const getFollowUpMode = () => {
-    switch (explorationMode) {
-      case 'manual':
-        return 'focused'; // More specific, user-directed
-      case 'guided':
-        return 'focused'; // AI suggests specific paths
-      case 'hybrid':
-        return 'expansive'; // Mix of breadth and depth
-      case 'classic':
-        return 'expansive'; // Original auto-exploration
-      default:
-        return 'expansive';
-    }
-  };
+  // Custom hooks
+  const { explorationMode, setExplorationMode, getFollowUpMode } = useExplorationMode('hybrid');
+  const { selectedNodeType, setSelectedNodeType, createNode: createNodeFromType } = useNodeCreation();
 
   // Canvas persistence
   const { currentCanvasId, setCurrentCanvasId } = useCurrentCanvas();
@@ -150,28 +135,11 @@ const SearchView: React.FC = () => {
   // Removed deck refs and state - no longer needed
 
   // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd+N or Ctrl+N to create new note node
-      if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
-        e.preventDefault();
-        handleCreateNode(NodeType.NOTE);
-      }
-      // Cmd+Shift+N or Ctrl+Shift+N to create new chat node
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'N') {
-        e.preventDefault();
-        handleCreateNode(NodeType.CHAT);
-      }
-      // Cmd+/ or Ctrl+/ to create new query node
-      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
-        e.preventDefault();
-        handleCreateNode(NodeType.QUERY);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  useKeyboardShortcuts({
+    onCreateNote: () => handleCreateNode(NodeType.NOTE),
+    onCreateChat: () => handleCreateNode(NodeType.CHAT),
+    onCreateQuery: () => handleCreateNode(NodeType.QUERY),
+  });
 
   useEffect(() => {
     const activeRef = activeRequestRef.current;
@@ -315,20 +283,7 @@ const SearchView: React.FC = () => {
       return;
     }
 
-    const nodeId = `${nodeType}-${Date.now()}`;
-    const newNode: Node = {
-      id: nodeId,
-      type: nodeType,
-      data: {
-        label: nodeType === NodeType.NOTE ? 'Untitled Note' :
-               nodeType === NodeType.CHAT ? 'New Chat' :
-               nodeType === NodeType.QUERY ? 'Research Query' : 'New Node',
-        content: '',
-        conversationThread: [],
-      },
-      position,
-    };
-
+    const newNode = createNodeFromType(nodeType, position);
     setNodes((prevNodes) => [...prevNodes, newNode]);
     setSelectedNodeType(null); // Clear crosshair mode
   };
