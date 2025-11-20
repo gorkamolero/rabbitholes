@@ -2,7 +2,7 @@
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/gorkamolero/rabbitholes)
 
-**✨ Now powered by Next.js 15!**
+**✨ Now powered by Next.js 16 with Turbopack!**
 
 ## 🚀 Quick Deploy
 
@@ -21,7 +21,7 @@
 ## 🛠️ Local Development
 
 ### Prerequisites
-- Node.js 18 or higher
+- Node.js 20.9.0 or higher (LTS recommended)
 - npm or yarn
 
 ### Setup
@@ -86,8 +86,8 @@ rabbitholes/
 
 ## 🏗️ Built With
 
-- **Next.js 15** - React framework with App Router
-- **React 18** - UI library
+- **Next.js 16** - React framework with App Router & Turbopack
+- **React 19** - UI library
 - **TypeScript** - Type safety
 - **Tailwind CSS** - Styling
 - **React Flow** - Interactive node-based UI
