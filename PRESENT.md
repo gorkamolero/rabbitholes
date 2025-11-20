@@ -35,75 +35,50 @@ This document provides a complete, ordered implementation roadmap for transformi
 
 ## Current State Assessment
 
-**Already Implemented:**
-- ✅ Basic IndexedDB sync (useCurrentCanvas, useAutoSave)
-- ✅ Canvas Manager component with Sheet/Dialog/Toast
-- ✅ Node creation modal
-- ✅ Repository functions (createCanvas, loadCanvasState)
-- ✅ Dagre layout for graph visualization
-- ✅ MainNode component with content display
-- ✅ Conversation history tracking
-- ✅ AI response generation (OpenRouter/Gemini)
-- ✅ Tavily search integration
-- ✅ **Context menu node creation (right-click canvas)**
-- ✅ **Multiple node types (Chat, Note, Query, Main)**
-- ✅ **Node type registry with metadata**
-- ✅ **Floating action menu (+) button**
-- ✅ **Empty canvas welcome screen**
-- ✅ **Complete shadcn/ui component library**
-- ✅ **Theme provider (dark mode support)**
-- ✅ **Infinite canvas with pan/zoom**
-- ✅ **Enhanced node editing (inline for NoteNode, ChatNode)**
+**Foundation Already Built:**
+- Basic IndexedDB sync (useCurrentCanvas, useAutoSave)
+- Canvas Manager component with Sheet/Dialog/Toast
+- Node creation modal
+- Repository functions (createCanvas, loadCanvasState)
+- Dagre layout for graph visualization
+- MainNode component with content display
+- Conversation history tracking
+- AI response generation (OpenRouter/Gemini)
+- Tavily search integration
+- Context menu node creation (right-click canvas)
+- Multiple node types (Chat, Note, Query, Main)
+- Node type registry with metadata
+- Floating action menu (+) button
+- Empty canvas welcome screen
+- Complete shadcn/ui component library
+- Theme provider (dark mode support)
+- Infinite canvas with pan/zoom
+- Enhanced node editing (inline for NoteNode, ChatNode)
+- ExplorationModeSelector integrated in toolbar
+- Click-anywhere-to-create with crosshair cursor
+- Keyboard shortcuts (Cmd+N, Cmd+Shift+N, Cmd+/)
+- Mode selector controls AI behavior
+- Full QueryNode with search execution
+- All components under 200 lines (CLAUDE.md standard)
 
-**Still Missing for Manual Exploration:**
-- ❌ AI suggestion panel (collapsible)
-- ❌ Manual connection drawing with context control
-- ❌ Context control per connection
-- ❌ Node templates and macros
-- ❌ Exploration modes (Manual/Guided/Hybrid/Classic)
-- ❌ Keyboard shortcuts (Cmd+N for new node)
-- ❌ Connection suggestions between existing nodes
-- ❌ Node branching and cloning
+**Missing for Manual Exploration:**
+- AI suggestion panel (collapsible)
+- Manual connection drawing with context control
+- Context control per connection
+- Node templates and macros
+- Connection suggestions between existing nodes
+- Node branching and cloning
 
 ---
 
 ## Implementation Phases
 
----
-
-# PHASE 1: Manual Node Creation & UI Foundation ✅
-**Status:** ✅ **COMPLETED** (2025-01-20)
-**PR:** #13
-**Goal:** Enable full user control over node creation and placement
-
-**See CHANGELOG.md for detailed implementation notes.**
-
-### Completed Features:
-- ✅ Empty canvas welcome screen (EmptyCanvasWelcome with gamified deck UI)
-- ✅ Context menu for node creation (right-click canvas)
-- ✅ Floating action menu (+) button
-- ✅ Multiple node types: ChatNode, NoteNode, QueryNode, MainNode
-- ✅ Node type registry with metadata (app/lib/nodeTypes.ts)
-- ✅ Complete shadcn/ui component library (16+ components)
-- ✅ Theme provider with dark mode support
-- ✅ Infinite canvas with pan/zoom controls
-- ✅ Enhanced CanvasManager with Toast notifications
-- ✅ **ExplorationModeSelector integrated in toolbar**
-- ✅ **Click-anywhere-to-create with crosshair cursor**
-- ✅ **Keyboard shortcuts (Cmd+N, Cmd+Shift+N, Cmd+/)**
-- ✅ **Mode selector controls AI behavior**
-- ✅ **Full QueryNode with search execution**
-
-### Known Tech Debt:
-- ⚠️ Duplicate utils.ts in app/lib/ and lib/
-- ⚠️ Duplicate UI components in app/components/ui/ and components/ui/
-- ⚠️ Manual testing required for integrated features
+> **Note:** Phase 1 completed. See CHANGELOG.md for implementation details.
 
 ---
 
 # PHASE 2: AI Suggestion System (Non-Intrusive)
 **Priority:** 🔴 Critical
-**Estimated Time:** 2 weeks
 **Goal:** Add optional AI suggestions that enhance without dictating
 
 ## 2.1 Collapsible Suggestion Panel
@@ -430,12 +405,12 @@ const SuggestedEdge = ({ id, source, target, data }) => {
 
 ## Deliverables - Phase 2
 
-✅ Collapsible AI suggestion panel
-✅ Contextual right-click AI actions
-✅ Smart connection suggestions with dotted preview
-✅ Accept/modify/dismiss for all suggestions
-✅ Request alternative suggestions
-✅ Suggestion reasoning display
+- Collapsible AI suggestion panel
+- Contextual right-click AI actions
+- Smart connection suggestions with dotted preview
+- Accept/modify/dismiss for all suggestions
+- Request alternative suggestions
+- Suggestion reasoning display
 
 **Success Criteria:**
 - AI suggestions are helpful but never intrusive
@@ -447,7 +422,6 @@ const SuggestedEdge = ({ id, source, target, data }) => {
 
 # PHASE 3: Manual Connections & Context Control
 **Priority:** 🔴 Critical
-**Estimated Time:** 2 weeks
 **Goal:** Full control over node connections and context sharing
 
 ## 3.1 Drag-to-Connect with Connection Types
@@ -718,12 +692,12 @@ export function BranchButton({
 
 ## Deliverables - Phase 3
 
-✅ Drag-to-connect between nodes
-✅ Connection type selector (leads-to, contradicts, etc.)
-✅ Context sharing toggle per edge
-✅ Context sources panel with token estimation
-✅ Branch conversation button
-✅ Visual branch indicators
+- Drag-to-connect between nodes
+- Connection type selector (leads-to, contradicts, etc.)
+- Context sharing toggle per edge
+- Context sources panel with token estimation
+- Branch conversation button
+- Visual branch indicators
 
 **Success Criteria:**
 - Users can manually draw connections
@@ -733,98 +707,11 @@ export function BranchButton({
 
 ---
 
-# PHASE 4: Infinite Canvas & Navigation
+# PHASE 4: Canvas Navigation Enhancements
 **Priority:** 🟡 Important
-**Estimated Time:** 1 week
-**Goal:** Truly infinite canvas with excellent navigation
+**Goal:** Enhanced canvas navigation and search
 
-## 4.1 Infinite Canvas Setup
-
-**Implementation in RabbitFlow.tsx:**
-
-```typescript
-import { MiniMap, Controls, Background, BackgroundVariant } from '@xyflow/react';
-
-<ReactFlow
-  nodes={nodes}
-  edges={edges}
-  onNodesChange={onNodesChange}
-  onEdgesChange={onEdgesChange}
-
-  // Infinite canvas settings
-  minZoom={0.1}
-  maxZoom={2}
-  translateExtent={[
-    [-Infinity, -Infinity],
-    [Infinity, Infinity]
-  ]}
-  nodeExtent={[
-    [-Infinity, -Infinity],
-    [Infinity, Infinity]
-  ]}
-
-  // Better panning
-  panOnDrag={true}
-  panOnScroll={false}
-  zoomOnScroll={true}
-  zoomOnPinch={true}
-  zoomOnDoubleClick={false}
-  autoPanOnNodeDrag={true}
-
-  fitView
->
-  {/* Minimap */}
-  <MiniMap
-    nodeColor={(node) => {
-      const colors = {
-        chat: '#3b82f6',
-        note: '#10b981',
-        query: '#a855f7',
-        thought: '#f59e0b',
-      };
-      return colors[node.type] || '#6b7280';
-    }}
-    maskColor="rgba(0, 0, 0, 0.6)"
-    className="!bg-background !border-border"
-    position="bottom-right"
-  />
-
-  {/* Controls */}
-  <Controls
-    position="top-right"
-    showZoom={true}
-    showFitView={true}
-    showInteractive={true}
-    className="!bg-background !border-border !shadow-lg"
-  />
-
-  {/* Background */}
-  <Background
-    color="hsl(var(--muted))"
-    gap={16}
-    variant={BackgroundVariant.Dots}
-  />
-</ReactFlow>
-```
-
----
-
-## Deliverables - Phase 4
-
-✅ Infinite canvas (no boundaries)
-✅ Minimap with color-coded nodes
-✅ Zoom controls
-✅ Fit view functionality
-✅ Dot grid background
-
----
-
-# PHASE 5: Exploration Tools & Power Features
-**Priority:** 🟡 Important
-**Estimated Time:** 2 weeks
-**Goal:** Advanced features for power users
-
-## 5.1 Canvas Search (Cmd+K)
+## 4.1 Canvas Search (Cmd+K)
 
 **Component:**
 
@@ -886,7 +773,20 @@ npx shadcn@latest add command
 
 ---
 
-## 5.2 Node Templates
+## Deliverables - Phase 4
+
+- Canvas search with Cmd+K
+- Node jump navigation
+- Breadcrumb trails
+- Recently viewed nodes
+
+---
+
+# PHASE 5: Node Templates & Export
+**Priority:** 🟡 Important
+**Goal:** Reusable templates and data portability
+
+## 5.1 Node Templates
 
 **Component:**
 
@@ -946,7 +846,7 @@ export function NodeTemplates({ onCreateFromTemplate }: {
 
 ---
 
-## 5.3 Export/Import
+## 5.2 Export/Import
 
 **Implementation:**
 
@@ -1011,17 +911,15 @@ export function ExportDialog({ canvasId, canvasName }: {
 
 ## Deliverables - Phase 5
 
-✅ Canvas search with Cmd+K
-✅ Node templates library
-✅ Export to JSON/Markdown
-✅ Import from JSON
-✅ Keyboard shortcuts panel
+- Node templates library
+- Export to JSON/Markdown
+- Import from JSON
+- Template marketplace/sharing
 
 ---
 
 # PHASE 6: Polish & Performance
 **Priority:** 🟢 Enhancement
-**Estimated Time:** 1-2 weeks
 
 ## 6.1 Animations & Transitions
 
@@ -1081,48 +979,11 @@ useOnViewportChange({
 
 ## Deliverables - Phase 6
 
-✅ Smooth animations for node/edge creation
-✅ Virtual rendering for large graphs
-✅ Optimized re-renders
-✅ Lazy loading for images
-✅ IndexedDB query optimization
-
----
-
-# Implementation Timeline
-
-## Week 1-2: Phase 1 Foundation
-- Empty canvas & click-to-create
-- Node type system (Chat, Note, Query)
-- Exploration mode selector
-
-## Week 3-4: Phase 2 AI Suggestions
-- Suggestion panel
-- Contextual actions
-- Smart connections
-
-## Week 5-6: Phase 3 Context Control
-- Manual connections
-- Connection types
-- Context sources panel
-- Branching
-
-## Week 7: Phase 4 Infinite Canvas
-- Canvas configuration
-- Minimap & controls
-- Navigation
-
-## Week 8-9: Phase 5 Power Features
-- Canvas search
-- Templates
-- Export/Import
-
-## Week 10-11: Phase 6 Polish
-- Animations
-- Performance
-- Bug fixes
-
-**Total Timeline:** 10-11 weeks
+- Smooth animations for node/edge creation
+- Virtual rendering for large graphs
+- Optimized re-renders
+- Lazy loading for images
+- IndexedDB query optimization
 
 ---
 
@@ -1176,18 +1037,8 @@ useOnViewportChange({
 
 # Next Steps
 
-1. **Install all shadcn components:**
-```bash
-npx shadcn@latest add button card dialog dropdown-menu input textarea select tooltip badge checkbox scroll-area command context-menu
-```
+**Current Status:** Phase 1 complete (see CHANGELOG.md)
 
-2. **Install React Flow UI components:**
-```bash
-npx shadcn@latest add https://ui.reactflow.dev/base-node
-npx shadcn@latest add https://ui.reactflow.dev/labeled-handle
-npx shadcn@latest add https://ui.reactflow.dev/data-edge
-```
+**Next Implementation:** Phase 2 - AI Suggestion System
 
-3. **Start with Phase 1.1:** Empty Canvas Welcome component
-
-Would you like me to begin implementation?
+Begin with Phase 2.1: Collapsible Suggestion Panel
