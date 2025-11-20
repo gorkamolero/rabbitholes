@@ -192,12 +192,10 @@ export function CanvasManager({
                   <Save className="w-4 h-4" />
                   Save As
                 </Button>
-                <label className="w-full">
-                  <Button variant="outline" className="w-full cursor-pointer" asChild>
-                    <div>
-                      <Upload className="w-4 h-4" />
-                      Import
-                    </div>
+                <label className="w-full cursor-pointer">
+                  <Button variant="outline" className="w-full pointer-events-none">
+                    <Upload className="w-4 h-4" />
+                    Import
                   </Button>
                   <input
                     type="file"
