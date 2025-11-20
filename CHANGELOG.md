@@ -5,166 +5,115 @@ This document tracks completed implementation phases from the PRESENT.md roadmap
 ---
 
 ## Phase 1: Manual Node Creation & UI Foundation ✅
-**Completed:** 2025-01-20
-**PR:** #13
+**Completed:** January 20, 2025
+**Status:** 🎉 100% Complete
 **Goal:** Enable full user control over node creation and placement
 
-### 1.1 Empty Canvas Start & Click-to-Create ✅
+### Summary
 
-**Implemented Components:**
-- ✅ `app/components/canvas/EmptyCanvasWelcome.tsx` - Gamified welcome with Thoth/Anubis/Isis deck cards
-- ✅ `app/components/canvas/FloatingActionMenu.tsx` - Radial menu for quick node creation
-- ✅ `app/components/canvas/NodeTypeButton.tsx` - Reusable node type selector button
-- ✅ `app/components/canvas/CanvasContextMenu.tsx` - Right-click context menu for canvas
+Phase 1 transformed RabbitHoles from a purely AI-driven tool into a user-controlled research environment. Users can now manually create nodes, choose exploration modes, and have complete agency over their knowledge graph.
 
-**Modified Components:**
-- ✅ `app/components/RabbitFlow.tsx` - Added context menu wrapper, infinite canvas config
-- ✅ `app/components/SearchView.tsx` - Integrated manual node creation flow
+### Features Delivered
 
-**Features Delivered:**
-- Canvas context menu (right-click to create nodes)
-- Floating action button (+) for quick node creation
-- Empty canvas welcome screen with gamified UI
-- Node creation at specific canvas positions
+#### Node Creation System
+- **Empty Canvas Welcome** - Gamified entry with mystical deck cards (Thoth/Anubis/Isis)
+- **Context Menu** - Right-click anywhere to create nodes
+- **Floating Action Menu** - Persistent (+) button for quick node creation
+- **Click-to-Create** - Crosshair cursor mode for precise node placement
+- **Keyboard Shortcuts:**
+  - `Cmd/Ctrl+N` - Create note node
+  - `Cmd/Ctrl+Shift+N` - Create chat node
+  - `Cmd/Ctrl+/` - Create query node
 
-### 1.2 Node Type System ✅
+#### Node Types (4 Total)
+1. **MainNode** - AI-generated responses with sources and images
+2. **ChatNode** - Interactive conversation with threading
+3. **NoteNode** - Markdown editing with inline editing
+4. **QueryNode** - Research questions with web search execution
 
-**Implemented Node Components:**
-- ✅ `app/components/nodes/ChatNode.tsx` - Interactive conversation node
-- ✅ `app/components/nodes/NoteNode.tsx` - Markdown note-taking node
-- ✅ `app/components/nodes/QueryNode.tsx` - Research question node (placeholder)
-- ✅ `app/components/nodes/MainNode.tsx` - AI response node (pre-existing, enhanced)
+#### Exploration Modes
+- **Manual Mode** - Full user control, AI assists only when asked
+- **Guided Mode** - AI suggests, user decides
+- **Hybrid Mode** - Mix of manual and AI (default)
+- **Classic Mode** - Original auto-exploration
+- Mode selector in toolbar controls AI behavior
 
-**Type System:**
-- ✅ `app/lib/nodeTypes.ts` - Centralized node type registry with metadata
-- ✅ Node type enum: CHAT, NOTE, QUERY, MAIN
-- ✅ Type metadata: labels, icons, colors, descriptions
+#### UI Component Library (16+ Components)
+Complete shadcn/ui integration with:
+- Badge, Button, Card, Context Menu, Dialog
+- Dropdown Menu, Input, Label, Select, Scroll Area
+- Separator, Sheet, Skeleton, Sonner, Textarea, Tooltip
+- Custom BounceCards with GSAP animations
 
-### 1.3 shadcn/ui Component Library ✅
+#### Canvas Features
+- Infinite canvas (no boundaries)
+- Pan and zoom controls
+- MiniMap navigation
+- Dagre auto-layout
+- Smooth animated connections
+- Theme support (dark mode ready)
 
-**Installed and Configured Components:**
-- ✅ `app/components/ui/badge.tsx` - Status badges with variants
-- ✅ `app/components/ui/button.tsx` - Button component with class-variance-authority
-- ✅ `app/components/ui/card.tsx` - Card container components
-- ✅ `app/components/ui/context-menu.tsx` - Context menu for right-click actions
-- ✅ `app/components/ui/dialog.tsx` - Modal dialog component
-- ✅ `app/components/ui/dropdown-menu.tsx` - Dropdown menus
-- ✅ `app/components/ui/input.tsx` - Text input fields
-- ✅ `app/components/ui/label.tsx` - Form labels
-- ✅ `app/components/ui/scroll-area.tsx` - Custom scrollbars
-- ✅ `app/components/ui/separator.tsx` - Visual dividers
-- ✅ `app/components/ui/sheet.tsx` - Slide-in panels
-- ✅ `app/components/ui/skeleton.tsx` - Loading placeholders
-- ✅ `app/components/ui/sonner.tsx` - Toast notifications
-- ✅ `app/components/ui/textarea.tsx` - Multi-line text input
-- ✅ `app/components/ui/tooltip.tsx` - Hover tooltips
-- ✅ `app/components/ui/bounce-cards.tsx` - GSAP-animated image cards (custom)
+### Technical Implementation
 
-**Utility Libraries:**
-- ✅ `app/lib/utils.ts` - cn() utility for className merging
-- ✅ Duplicate utilities in `lib/utils.ts` and `components/` (cleanup needed)
+#### New Components
+```
+app/components/canvas/
+  ├── EmptyCanvasWelcome.tsx
+  ├── FloatingActionMenu.tsx
+  ├── NodeTypeButton.tsx
+  ├── CanvasContextMenu.tsx
+  └── ExplorationModeSelector.tsx
 
-### 1.4 Theme Support ✅
+app/components/nodes/
+  ├── ChatNode.tsx
+  ├── NoteNode.tsx
+  ├── QueryNode.tsx
+  └── MainNode.tsx (enhanced)
 
-**Implemented:**
-- ✅ `app/components/theme-provider.tsx` - Dark mode theme provider
-- ✅ Tailwind CSS configuration with theme tokens
-- ✅ CSS variables for theming in `app/globals.css`
+app/components/ui/
+  └── [16+ shadcn components]
 
-**Configuration:**
-- ✅ `tailwind.config.ts` - Theme colors, radius, animations
-- ✅ `components.json` - shadcn/ui configuration
-- ✅ Dark mode strategy: "class" based
+app/hooks/
+  ├── useExplorationMode.ts
+  ├── useNodeCreation.ts
+  └── useKeyboardShortcuts.ts
 
-### Architecture Improvements ✅
-
-**Component Refactoring:**
-- ✅ `app/components/CanvasManager.tsx` - Enhanced with Sheet, Dialog, Toast
-- ✅ `app/components/SearchView.tsx` - Separated AI search from manual creation
-- ✅ `app/components/RabbitFlow.tsx` - Added ReactFlowProvider wrapper
-
-**Canvas Features:**
-- ✅ Infinite canvas (translateExtent, nodeExtent set to Infinity)
-- ✅ Pan and zoom controls
-- ✅ MiniMap with custom styling
-- ✅ Dagre layout algorithm for auto-positioning
-- ✅ Connection drawing with smooth step edges
-
-### Dependencies Added ✅
-
-```json
-"@radix-ui/react-context-menu": "^2.2.3",
-"@radix-ui/react-dialog": "^1.1.4",
-"@radix-ui/react-dropdown-menu": "^2.1.4",
-"@radix-ui/react-label": "^2.1.1",
-"@radix-ui/react-scroll-area": "^1.2.2",
-"@radix-ui/react-separator": "^1.1.1",
-"@radix-ui/react-sheet": "^1.0.0",
-"@radix-ui/react-slot": "^1.1.1",
-"@radix-ui/react-tooltip": "^1.1.8",
-"class-variance-authority": "^0.7.1",
-"clsx": "^2.1.1",
-"lucide-react": "^0.468.0",
-"next-themes": "^0.4.4",
-"sonner": "^1.7.3",
-"tailwind-merge": "^2.6.0",
-"vaul": "^1.1.2"
+app/lib/
+  └── nodeTypes.ts (centralized registry)
 ```
 
-### Phase 1 Completion Updates (2025-01-20)
+#### Key Refactorings
+- Extracted custom hooks from SearchView (reduced from 616→571 lines)
+- Separated AI search logic from manual node creation
+- Added ReactFlowProvider wrapper for better state management
+- Improved canvas manager with Sheet/Dialog/Toast notifications
 
-**Initial Features Implemented:**
-- ✅ `app/components/canvas/ExplorationModeSelector.tsx` - Mode selector component (Manual/Guided/Hybrid/Classic)
-- ✅ `app/components/nodes/QueryNode.tsx` - Full QueryNode implementation with AI search integration
-- ✅ `app/components/ui/select.tsx` - Select dropdown component for mode selector
-- ✅ **Keyboard shortcuts:**
-  - `Cmd/Ctrl+N` - Create new note node
-  - `Cmd/Ctrl+Shift+N` - Create new chat node
-  - `Cmd/Ctrl+/` - Create new query node
+#### Dependencies Added
+```json
+{
+  "@radix-ui/*": "Various versions for UI primitives",
+  "class-variance-authority": "^0.7.1",
+  "clsx": "^2.1.1",
+  "lucide-react": "^0.468.0",
+  "next-themes": "^0.4.4",
+  "sonner": "^1.7.3",
+  "tailwind-merge": "^2.6.0"
+}
+```
 
-### Phase 1 Final Completion (2025-01-20)
+### Code Quality
+- ✅ TypeScript fully typed, no errors
+- ✅ Build passes in production mode
+- ✅ Hydration errors resolved
+- ✅ No duplicate files or backup clutter
+- ✅ Reusable hooks for better organization
+- ⚠️ Manual testing required (no automated tests yet)
 
-**Fully Integrated and Connected:**
-- ✅ ExplorationModeSelector integrated into SearchView toolbar (top-left)
-- ✅ Click-anywhere-to-create with crosshair cursor mode
-- ✅ Mode selector controls AI behavior:
-  - Manual mode → focused AI responses
-  - Guided mode → focused suggestions
-  - Hybrid mode → expansive exploration (default)
-  - Classic mode → expansive auto-exploration
-- ✅ Keyboard shortcuts trigger crosshair mode (click to place node)
-- ✅ Floating action menu triggers crosshair mode
-- ✅ Context menu creates nodes at click position
-
-**Phase 1 is now 100% complete!** All features implemented, integrated, and tested.
-
-### Code Quality Improvements (2025-01-20)
-
-**Refactored SearchView.tsx:**
-- ✅ Extracted `useExplorationMode` hook (exploration mode logic)
-- ✅ Extracted `useNodeCreation` hook (node creation logic)
-- ✅ Extracted `useKeyboardShortcuts` hook (keyboard event handling)
-- ✅ Reduced SearchView from 616 → 571 lines (-45 lines)
-- ✅ Improved code organization and reusability
-
-**Verified No Duplicates:**
-- ✅ Only one `utils.ts` exists (app/lib/utils.ts)
-- ✅ Only one components directory (app/components/)
-- ✅ No backup files present
-
-### Known Issues / Tech Debt
-
-- ⚠️ Manual testing required for all integrated features
-- ⚠️ No automated test suite
-
-### Testing Status
-
-- ✅ Build passes with no TypeScript errors
-- ✅ All new components properly typed
-- ✅ Hydration errors fixed with `suppressHydrationWarning`
-- ✅ QueryNode properly typed with ReactFlow Node interface
-- ⚠️ Manual testing required for all canvas interactions
-- ⚠️ No automated tests written
+### Commits
+- #13 - Initial Phase 1 implementation
+- f90a620 - Complete remaining features (QueryNode, ExplorationModeSelector, Keyboard Shortcuts)
+- ad55401 - Integrate all features and connect to AI behavior
+- 8278214 - Extract custom hooks and clean up tech debt
 
 ---
 
