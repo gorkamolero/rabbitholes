@@ -69,7 +69,7 @@ export function useRabbitFlowHandlers(
   const handleConnectEnd = useCallback(
     (event: MouseEvent | TouchEvent, connectionState: any) => {
       if (!connectionState.isValid && connectionState.fromNode) {
-        const fromNode = nodes.find(n => n.id === connectionState.fromNode.nodeId);
+        const fromNode = nodes.find(n => n.id === connectionState.fromNode.id);
         if (fromNode && onConnectEnd) {
           onConnectEnd(event, { fromNode });
         }
