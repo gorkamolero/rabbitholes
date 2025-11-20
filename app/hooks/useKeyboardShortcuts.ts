@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { NodeType } from '../lib/nodeTypes';
 
 interface UseKeyboardShortcutsProps {
   onCreateNote: () => void;

@@ -109,13 +109,37 @@ const RabbitFlowInner: React.FC<RabbitFlowProps> = ({
     selectedNodeType
   );
 
+  // Sync nodes and edges from parent, but preserve manual positioning
   React.useEffect(() => {
-    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
-      initialNodes,
-      initialEdges
-    );
-    setNodes(layoutedNodes);
-    setEdges(layoutedEdges);
+    // Only update if nodes/edges actually changed (not just reference)
+    setNodes((currentNodes) => {
+      // If no current nodes, layout the initial nodes
+      if (currentNodes.length === 0 && initialNodes.length > 0) {
+        const { nodes: layoutedNodes } = getLayoutedElements(initialNodes, initialEdges);
+        return layoutedNodes;
+      }
+
+      // If new nodes were added, merge them with existing nodes
+      const currentIds = new Set(currentNodes.map(n => n.id));
+      const newNodes = initialNodes.filter(n => !currentIds.has(n.id));
+
+      if (newNodes.length > 0) {
+        // Add new nodes without re-layouting existing ones
+        return [...currentNodes, ...newNodes];
+      }
+
+      // If nodes were removed, filter them out
+      const initialIds = new Set(initialNodes.map(n => n.id));
+      const filteredNodes = currentNodes.filter(n => initialIds.has(n.id));
+
+      if (filteredNodes.length !== currentNodes.length) {
+        return filteredNodes;
+      }
+
+      return currentNodes;
+    });
+
+    setEdges(initialEdges);
   }, [initialNodes, initialEdges, setNodes, setEdges]);
 
   return (

@@ -1035,6 +1035,36 @@ useOnViewportChange({
 
 ---
 
+# PHASE 7: Multi-Node Selection & Context Aggregation
+**Priority:** 🟡 Important
+**Goal:** Select multiple nodes as a group and feed their combined content to a new AI node
+
+## Feature Description
+
+Users should be able to:
+- Select multiple nodes (via rectangle drag or Shift+Click)
+- See a panel showing the selected nodes and estimated token count
+- Click a button to create a new Chat or Query node that receives all selected nodes' content as context
+- The new AI node will have access to the combined context for more comprehensive analysis
+
+## Use Cases
+
+- Compare findings from multiple research nodes
+- Synthesize information from different sources
+- Ask questions that span multiple topics
+- Create summaries that combine several notes
+
+## Expected Behavior
+
+1. User selects 3-5 nodes containing different research findings
+2. A floating panel appears showing "5 nodes selected (~2,000 tokens)"
+3. User clicks "Create Chat with Context"
+4. New ChatNode appears with all 5 nodes' content pre-loaded as conversation context
+5. User asks: "What are the common themes across these findings?"
+6. AI responds with synthesis based on all selected content
+
+---
+
 # Next Steps
 
 **Current Status:** Phase 1 complete (see CHANGELOG.md)

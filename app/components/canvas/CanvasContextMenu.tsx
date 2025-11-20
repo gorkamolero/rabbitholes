@@ -9,7 +9,7 @@ import {
   ContextMenuTrigger,
   ContextMenuLabel,
 } from '@/app/components/ui/context-menu';
-import { MessageSquare, StickyNote, Search, Lightbulb, Link as LinkIcon, Sparkles } from 'lucide-react';
+import { MessageSquare, StickyNote, Search } from 'lucide-react';
 import { NodeType, nodeTypeMetadata } from '@/app/lib/nodeTypes';
 
 interface CanvasContextMenuProps {
@@ -23,9 +23,6 @@ export function CanvasContextMenu({ children, onCreateNode, position }: CanvasCo
     { type: NodeType.NOTE, icon: StickyNote },
     { type: NodeType.CHAT, icon: MessageSquare },
     { type: NodeType.QUERY, icon: Search },
-    { type: NodeType.THOUGHT, icon: Lightbulb },
-    { type: NodeType.REFERENCE, icon: LinkIcon },
-    { type: NodeType.INSIGHT, icon: Sparkles },
   ];
 
   return (

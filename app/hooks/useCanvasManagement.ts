@@ -1,14 +1,15 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { Node, Edge } from '@xyflow/react';
 import { useCurrentCanvas, useAutoSave } from './useCanvasSync';
 import { createCanvas, loadCanvasState } from '../lib/db/repository';
+import type { ConversationMessage } from '../components/SearchView/types';
 
 export function useCanvasManagement(
   nodes: Node[],
   edges: Edge[],
   setNodes: (nodes: Node[]) => void,
   setEdges: (edges: Edge[]) => void,
-  setConversationHistory: (history: any[]) => void
+  setConversationHistory: (history: ConversationMessage[]) => void
 ) {
   const { currentCanvasId, setCurrentCanvasId } = useCurrentCanvas();
   const { saving, lastSaved } = useAutoSave(currentCanvasId, nodes, edges, {

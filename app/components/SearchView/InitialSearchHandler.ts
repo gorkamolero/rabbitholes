@@ -7,10 +7,16 @@ interface ImageData {
   description: string;
 }
 
+interface Source {
+  title: string;
+  url: string;
+  uri: string;
+}
+
 interface SearchResponse {
   response: string;
   followUpQuestions: string[];
-  sources: any[];
+  sources: Source[];
   images: ImageData[];
   contextualQuery: string;
 }

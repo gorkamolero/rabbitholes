@@ -1,17 +1,6 @@
 import { Node, Edge, Position } from '@xyflow/react';
 import { searchRabbitHole } from '../../services/api';
-
-interface ConversationMessage {
-  user?: string;
-  assistant?: string;
-}
-
-interface SearchResponse {
-  response: string;
-  followUpQuestions: string[];
-  sources: any[];
-  images: any[];
-}
+import type { ConversationMessage } from './types';
 
 export async function handleNodeExpansion(
   node: Node,
