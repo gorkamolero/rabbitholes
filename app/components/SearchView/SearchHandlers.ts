@@ -57,11 +57,12 @@ export async function handleNodeExpansion(
   }));
 
   // Make API call
+  const followUpMode = getFollowUpMode();
   const response = await searchRabbitHole({
     query: questionText,
     previousConversation: conversationHistory,
     concept: '',
-    followUpMode: getFollowUpMode()
+    followUpMode: followUpMode as 'expansive' | 'focused'
   }, abortController.signal);
 
   return response;

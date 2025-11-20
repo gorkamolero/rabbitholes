@@ -7,6 +7,7 @@
 import { Node, Edge } from '@xyflow/react';
 import { db } from './schema';
 import type { Canvas, StoredNode, StoredEdge, Setting, CanvasExport, DatabaseExport } from './types';
+export type { Canvas, StoredNode, StoredEdge, Setting, CanvasExport, DatabaseExport } from './types';
 
 // ============================================================================
 // Canvas Operations

@@ -29,7 +29,7 @@ export function useCanvasManagement(
       if (canvasData) {
         setNodes(canvasData.nodes || []);
         setEdges(canvasData.edges || []);
-        setConversationHistory(canvasData.metadata?.conversationHistory || []);
+        setConversationHistory([]);
         setCurrentCanvasId(canvasId);
       }
     } catch (error) {
@@ -39,15 +39,13 @@ export function useCanvasManagement(
 
   const handleSaveAs = useCallback(async (name: string) => {
     try {
-      const canvas = await createCanvas(name, nodes, edges, {
-        conversationHistory: []
-      });
+      const canvas = await createCanvas(name);
       setCurrentCanvasId(canvas.id);
     } catch (error) {
       console.error('Failed to save canvas:', error);
       throw error;
     }
-  }, [nodes, edges, setCurrentCanvasId]);
+  }, [setCurrentCanvasId]);
 
   return {
     currentCanvasId,

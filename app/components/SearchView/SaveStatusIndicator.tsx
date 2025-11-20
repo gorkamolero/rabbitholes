@@ -5,7 +5,7 @@ import { Loader2, Check } from 'lucide-react';
 interface SaveStatusIndicatorProps {
   currentCanvasId: string | null;
   saving: boolean;
-  lastSaved: number | null;
+  lastSaved: Date | number | null;
 }
 
 export function SaveStatusIndicator({
