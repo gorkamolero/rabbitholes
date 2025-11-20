@@ -39,6 +39,28 @@ export function BounceCards({
     setValidImages(images);
   }, [images]);
 
+  useEffect(() => {
+    if (validImages.length > 0) {
+      gsap.fromTo(
+        ".card",
+        {
+          opacity: 0,
+          scale: 0.5,
+          y: 50
+        },
+        {
+          opacity: 1,
+          scale: 1,
+          y: 0,
+          duration: 0.8,
+          ease: easeType,
+          delay: animationDelay,
+          stagger: animationStagger
+        }
+      );
+    }
+  }, [validImages, animationDelay, animationStagger, easeType]);
+
   const handleMouseEnter = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     gsap.to(e.currentTarget, {
       scale: 1.1,
