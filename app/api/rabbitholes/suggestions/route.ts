@@ -52,13 +52,11 @@ Format your response as a numbered list:
     ];
 
     const aiService = getAIService();
-    const response = await aiService.createChatCompletion(messages, {
-      temperature: mode === 'expansive' ? 0.9 : 0.7,
-      max_tokens: 500,
-    });
+    const response = await aiService.createChatCompletion(messages);
 
     // Extract questions from the response
-    const suggestions = response
+    const content = response.choices[0]?.message?.content || '';
+    const suggestions = content
       .split('\n')
       .filter((line) => line.trim())
       .map((line) => line.replace(/^\d+\.\s+/, '').trim())

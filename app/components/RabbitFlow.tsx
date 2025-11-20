@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState, useRef } from 'react';
 import {
   ReactFlow,
   Node,
@@ -16,11 +16,15 @@ import {
   Position,
   MiniMap,
   Connection,
+  useReactFlow,
+  ReactFlowProvider,
 } from '@xyflow/react';
 import dagre from '@dagrejs/dagre';
 import '@xyflow/react/dist/style.css';
 
 import { usePostHog } from 'posthog-js/react';
+import { CanvasContextMenu } from './canvas/CanvasContextMenu';
+import { NodeType } from '../lib/nodeTypes';
 
 interface RabbitFlowProps {
   initialNodes: Node[];
@@ -28,6 +32,7 @@ interface RabbitFlowProps {
   nodeTypes: NodeTypes;
   onNodeClick?: (node: Node) => void;
   onConnectEnd?: (event: MouseEvent | TouchEvent, connectionState: { fromNode: Node | null }) => void;
+  onCreateNodeAtPosition?: (type: NodeType, position: { x: number; y: number }) => void;
 }
 
 const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
@@ -84,15 +89,19 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
   return { nodes: newNodes, edges };
 };
 
-const RabbitFlow: React.FC<RabbitFlowProps> = ({
+const RabbitFlowInner: React.FC<RabbitFlowProps> = ({
   initialNodes,
   initialEdges,
   nodeTypes,
   onNodeClick,
-  onConnectEnd
+  onConnectEnd,
+  onCreateNodeAtPosition
 }) => {
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(initialEdges);
+  const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const { screenToFlowPosition } = useReactFlow();
 
   React.useEffect(() => {
     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
@@ -102,6 +111,28 @@ const RabbitFlow: React.FC<RabbitFlowProps> = ({
     setNodes(layoutedNodes);
     setEdges(layoutedEdges);
   }, [initialNodes, initialEdges, setNodes, setEdges]);
+
+  const handleContextMenu = useCallback(
+    (event: React.MouseEvent) => {
+      event.preventDefault();
+      setContextMenuPosition({ x: event.clientX, y: event.clientY });
+    },
+    []
+  );
+
+  const handleCreateNode = useCallback(
+    (type: NodeType, screenPosition: { x: number; y: number }) => {
+      if (onCreateNodeAtPosition) {
+        // Convert screen coordinates to flow coordinates
+        const flowPosition = screenToFlowPosition({
+          x: screenPosition.x,
+          y: screenPosition.y,
+        });
+        onCreateNodeAtPosition(type, flowPosition);
+      }
+    },
+    [onCreateNodeAtPosition, screenToFlowPosition]
+  );
 
   const onConnect = useCallback(
     (params: Connection) =>
@@ -152,63 +183,78 @@ const RabbitFlow: React.FC<RabbitFlowProps> = ({
   );
 
   return (
-    <div style={{ width: '100vw', height: '100vh' }}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onConnectEnd={handleConnectEnd}
-        onNodeClick={handleNodeClick}
-        nodeTypes={nodeTypes}
-        connectionLineType={ConnectionLineType.SmoothStep}
-        defaultEdgeOptions={{
-          animated: true,
-          style: { stroke: 'rgba(255, 255, 255, 0.3)' }
-        }}
-        fitView
-        // Infinite canvas configuration
-        minZoom={0.1}
-        maxZoom={2}
-        translateExtent={[
-          [-Infinity, -Infinity],
-          [Infinity, Infinity]
-        ]}
-        nodeExtent={[
-          [-Infinity, -Infinity],
-          [Infinity, Infinity]
-        ]}
-        // Pan and zoom settings
-        zoomOnScroll={true}
-        panOnScroll={false}
-        zoomOnPinch={true}
-        preventScrolling={false}
-        panOnDrag={true}
-        zoomOnDoubleClick={false}
-        style={{ backgroundColor: '#000000' }}
+    <div ref={reactFlowWrapper} style={{ width: '100vw', height: '100vh' }}>
+      <CanvasContextMenu
+        onCreateNode={handleCreateNode}
+        position={contextMenuPosition}
       >
-        <Controls
-          className="!bg-[#111111] !border-gray-800"
-        />
-        <MiniMap
-          style={{
-            backgroundColor: '#111111',
-            border: '1px solid #333333',
-            borderRadius: '4px',
-          }}
-          nodeColor="#666666"
-          maskColor="rgba(0, 0, 0, 0.7)"
-          className="!bottom-4 !right-4"
-        />
-        <Background
-          variant={BackgroundVariant.Dots}
-          gap={12}
-          size={1}
-          color="rgba(255, 255, 255, 0.05)"
-        />
-      </ReactFlow>
+        <div style={{ width: '100%', height: '100%' }} onContextMenu={handleContextMenu}>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onConnectEnd={handleConnectEnd}
+            onNodeClick={handleNodeClick}
+            nodeTypes={nodeTypes}
+            connectionLineType={ConnectionLineType.SmoothStep}
+            defaultEdgeOptions={{
+              animated: true,
+              style: { stroke: 'rgba(255, 255, 255, 0.3)' }
+            }}
+            fitView
+            // Infinite canvas configuration
+            minZoom={0.1}
+            maxZoom={2}
+            translateExtent={[
+              [-Infinity, -Infinity],
+              [Infinity, Infinity]
+            ]}
+            nodeExtent={[
+              [-Infinity, -Infinity],
+              [Infinity, Infinity]
+            ]}
+            // Pan and zoom settings
+            zoomOnScroll={true}
+            panOnScroll={false}
+            zoomOnPinch={true}
+            preventScrolling={false}
+            panOnDrag={true}
+            zoomOnDoubleClick={false}
+            style={{ backgroundColor: '#000000' }}
+          >
+            <Controls
+              className="!bg-[#111111] !border-gray-800"
+            />
+            <MiniMap
+              style={{
+                backgroundColor: '#111111',
+                border: '1px solid #333333',
+                borderRadius: '4px',
+              }}
+              nodeColor="#666666"
+              maskColor="rgba(0, 0, 0, 0.7)"
+              className="!bottom-4 !right-4"
+            />
+            <Background
+              variant={BackgroundVariant.Dots}
+              gap={12}
+              size={1}
+              color="rgba(255, 255, 255, 0.05)"
+            />
+          </ReactFlow>
+        </div>
+      </CanvasContextMenu>
     </div>
+  );
+};
+
+const RabbitFlow: React.FC<RabbitFlowProps> = (props) => {
+  return (
+    <ReactFlowProvider>
+      <RabbitFlowInner {...props} />
+    </ReactFlowProvider>
   );
 };
 

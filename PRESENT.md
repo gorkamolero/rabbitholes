@@ -1,117 +1,60 @@
-# RabbitHoles AI - Complete Implementation Plan
+# RabbitHoles AI - Manual Exploration System
+## Complete Implementation Roadmap
+
+---
 
 ## Executive Summary
 
-This document provides a complete, ordered implementation roadmap for transforming RabbitHoles from its current state into a full-featured AI-powered knowledge exploration platform with infinite canvas, multi-workspace support, and advanced conversation management.
+This document provides a complete, ordered implementation roadmap for transforming RabbitHoles from an automated exploration tool into a **user-controlled research experience** where AI suggestions enhance rather than dictate the exploration path. Users should feel in complete control of their research journey, with AI acting as an intelligent assistant.
 
-**Current State:**
-- ✅ Basic search & AI response generation
-- ✅ Drag-to-create node system
+**Vision:** Transform the current automated exploration into a user-driven research tool where users have complete agency over node creation, connections, and exploration paths.
+
+---
+
+## Core Principles
+
+### 1. User Agency First
+- Every node creation is a deliberate user choice
+- AI suggestions are always optional and dismissible
+- Users can ignore, modify, or replace any AI-generated content
+- The canvas is user-controlled - they build their research map
+
+### 2. Flexible Exploration Modes
+- **Manual Mode**: Full user control, AI assists only when asked
+- **Guided Mode**: AI suggests, user decides
+- **Hybrid Mode**: Mix of manual creation and AI exploration
+- **Classic Mode**: Current auto-exploration (kept as option)
+
+### 3. Non-Linear Thinking
+- Support jumping between ideas without forced connections
+- Allow orphan nodes (nodes without connections)
+- Enable retrospective linking (connect ideas after creation)
+- Support multiple exploration threads simultaneously
+
+---
+
+## Current State Assessment
+
+**Already Implemented:**
+- ✅ Basic IndexedDB sync (useCurrentCanvas, useAutoSave)
+- ✅ Canvas Manager component
+- ✅ Node creation modal
+- ✅ Repository functions (createCanvas, loadCanvasState)
+- ✅ Dagre layout for graph visualization
+- ✅ MainNode component with content display
 - ✅ Conversation history tracking
-- ✅ Graph visualization with Dagre layout
-- ✅ Image carousel & source display
-- ✅ Dark-themed UI with animations
+- ✅ AI response generation (OpenRouter/Gemini)
+- ✅ Tavily search integration
 
-**Missing Infrastructure:**
-- ❌ Persistence layer (no database/storage)
-- ❌ Canvas/workspace management
-- ❌ Node type system
-- ❌ Context control mechanism
-- ❌ Export/import functionality
-- ❌ Search & filtering
-
----
-
-## Priority Classification
-
-- 🔴 **Critical** - Core features essential for MVP (Phases 1-2)
-- 🟡 **Important** - Key features for full product experience (Phases 3-4)
-- 🟢 **Enhancement** - Nice-to-have UX improvements (Phases 5-6)
-
----
-
-## Technical Foundation Requirements
-
-### Database Schema Design
-
-**Storage Technology:** IndexedDB (client-side) + optional backend sync
-
-```typescript
-// Core Data Models
-
-interface Canvas {
-  id: string;                          // UUID
-  name: string;
-  description?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  thumbnail?: string;                  // Base64 preview
-  tags?: string[];
-  isArchived: boolean;
-}
-
-interface CanvasState {
-  canvasId: string;
-  nodes: Node[];                       // ReactFlow nodes
-  edges: Edge[];                       // ReactFlow edges
-  viewport: {                          // Current view position
-    x: number;
-    y: number;
-    zoom: number;
-  };
-  conversationHistory: ConversationMessage[];
-  metadata: {
-    nodeCount: number;
-    lastEditedAt: Date;
-    version: number;
-  };
-}
-
-interface NodeData {
-  id: string;
-  type: NodeType;                      // 'chat' | 'note' | 'query' | 'pdf' | 'image'
-  label: string;
-  content: string;                     // Markdown content
-
-  // Chat-specific
-  conversationThread?: ConversationMessage[];
-  systemPrompt?: string;
-
-  // Context control
-  contextSources?: string[];           // Node IDs providing context
-
-  // Media
-  images?: ImageData[];
-  sources?: SourceLink[];
-  pdfData?: PDFData;
-
-  // Metadata
-  createdAt: Date;
-  updatedAt: Date;
-  position: { x: number; y: number };
-  isExpanded: boolean;
-}
-
-interface Todo {
-  id: string;
-  canvasId: string;
-  nodeId?: string;                     // Optional link to node
-  content: string;
-  completed: boolean;
-  priority: 'low' | 'medium' | 'high';
-  dueDate?: Date;
-  tags?: string[];
-  createdAt: Date;
-}
-
-interface EdgeData {
-  id: string;
-  source: string;
-  target: string;
-  sharesContext: boolean;              // Controls if context flows
-  contextDirection?: 'bidirectional' | 'source-to-target' | 'target-to-source';
-}
-```
+**Missing for Manual Exploration:**
+- ❌ Click-to-create nodes anywhere on canvas
+- ❌ Multiple node types (Chat, Note, Query, etc.)
+- ❌ AI suggestion panel (collapsible)
+- ❌ Manual connection drawing
+- ❌ Context control per connection
+- ❌ Node templates and macros
+- ❌ Exploration modes (Manual/Guided/Hybrid/Classic)
+- ❌ Enhanced node interaction (inline editing, branching)
 
 ---
 
@@ -119,581 +62,309 @@ interface EdgeData {
 
 ---
 
-# PHASE 1: Persistence & Multi-Canvas Foundation
+# PHASE 1: Manual Node Creation & UI Foundation
 **Priority:** 🔴 Critical
 **Estimated Time:** 2-3 weeks
-**Dependencies:** None (foundational)
+**Goal:** Enable full user control over node creation and placement
 
-## Goals
-- Establish data persistence layer
-- Enable multiple canvas creation/management
-- Implement save/load system
-- Create canvas switcher UI
+## 1.1 Empty Canvas Start & Click-to-Create
 
----
+**Objective:** Transform the current auto-exploration UX into a blank canvas where users initiate all actions.
 
-## 1.1 IndexedDB Storage Layer
+**New Components (shadcn/ui based):**
+- `app/components/canvas/EmptyCanvasWelcome.tsx` - Welcome prompt with quick actions
+- `app/components/canvas/FloatingActionMenu.tsx` - Radial menu for node creation
+- `app/components/canvas/NodeTypeSelector.tsx` - Modal for selecting node type on click
 
-**New Files:**
-- `app/lib/db/schema.ts` - Database schema definitions
-- `app/lib/db/canvasStore.ts` - Canvas CRUD operations
-- `app/lib/db/nodeStore.ts` - Node data management
-- `app/lib/db/todoStore.ts` - Todo list storage
-- `app/hooks/useCanvas.ts` - Canvas state management hook
-- `app/hooks/useAutoSave.ts` - Auto-save hook with debouncing
-
-**Technical Specs:**
-```typescript
-// app/lib/db/schema.ts
-import { openDB, DBSchema, IDBPDatabase } from 'idb';
-
-interface RabbitHolesDB extends DBSchema {
-  canvases: {
-    key: string;
-    value: Canvas;
-    indexes: { 'by-updated': Date; 'by-created': Date };
-  };
-  canvasStates: {
-    key: string;
-    value: CanvasState;
-  };
-  todos: {
-    key: string;
-    value: Todo;
-    indexes: { 'by-canvas': string; 'by-node': string };
-  };
-}
-
-export async function initDB(): Promise<IDBPDatabase<RabbitHolesDB>> {
-  return openDB<RabbitHolesDB>('rabbitholes-db', 1, {
-    upgrade(db) {
-      // Canvas store
-      const canvasStore = db.createObjectStore('canvases', { keyPath: 'id' });
-      canvasStore.createIndex('by-updated', 'updatedAt');
-      canvasStore.createIndex('by-created', 'createdAt');
-
-      // Canvas state store
-      db.createObjectStore('canvasStates', { keyPath: 'canvasId' });
-
-      // Todo store
-      const todoStore = db.createObjectStore('todos', { keyPath: 'id' });
-      todoStore.createIndex('by-canvas', 'canvasId');
-      todoStore.createIndex('by-node', 'nodeId');
-    },
-  });
-}
-```
-
-**Dependencies to Install:**
-```bash
-npm install idb uuid
-npm install --save-dev @types/uuid
-```
-
-**Auto-Save Implementation:**
-```typescript
-// app/hooks/useAutoSave.ts
-import { useEffect, useRef } from 'react';
-import { debounce } from 'lodash';
-
-export function useAutoSave(
-  canvasId: string,
-  nodes: Node[],
-  edges: Edge[],
-  conversationHistory: ConversationMessage[],
-  viewport: Viewport
-) {
-  const saveCanvas = useRef(
-    debounce(async (state: CanvasState) => {
-      await canvasStore.saveState(state);
-    }, 2000) // Save 2s after last change
-  ).current;
-
-  useEffect(() => {
-    saveCanvas({
-      canvasId,
-      nodes,
-      edges,
-      viewport,
-      conversationHistory,
-      metadata: {
-        nodeCount: nodes.length,
-        lastEditedAt: new Date(),
-        version: 1,
-      },
-    });
-  }, [nodes, edges, conversationHistory, viewport]);
-
-  return { saveNow: () => saveCanvas.flush() };
-}
-```
-
-**Complexity:** Medium
-**Testing Needs:** IndexedDB transactions, error handling, migration
-
----
-
-## 1.2 Canvas Management UI
-
-**New Files:**
-- `app/components/CanvasSwitcher.tsx` - Dropdown/sidebar for canvas selection
-- `app/components/CanvasManager.tsx` - Create/rename/delete canvases
-- `app/components/CanvasCard.tsx` - Canvas preview card
-- `app/components/CanvasSettings.tsx` - Canvas-level settings
-
-**Modified Files:**
-- `app/components/SearchView.tsx` - Add canvas ID prop, integrate switcher
-- `app/page.tsx` - Show canvas manager on first load
-
-**UI Specification:**
+**Implementation:**
 
 ```typescript
-// app/components/CanvasSwitcher.tsx
-import { Canvas } from '@/lib/db/schema';
+// app/components/canvas/EmptyCanvasWelcome.tsx
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { MessageSquare, StickyNote, Search, Upload, Mic } from "lucide-react";
 
-interface CanvasSwitcherProps {
-  currentCanvas: Canvas;
-  onSwitch: (canvasId: string) => void;
-}
-
-export function CanvasSwitcher({ currentCanvas, onSwitch }: CanvasSwitcherProps) {
-  const [canvases, setCanvases] = useState<Canvas[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    // Load all canvases from IndexedDB
-    canvasStore.getAll().then(setCanvases);
-  }, []);
-
+export function EmptyCanvasWelcome({ onAction }: { onAction: (type: string) => void }) {
   return (
-    <div className="fixed top-4 left-4 z-50">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg"
-      >
-        <FolderIcon className="w-4 h-4" />
-        <span>{currentCanvas.name}</span>
-        <ChevronDownIcon className="w-4 h-4" />
-      </button>
-
-      {isOpen && (
-        <div className="absolute top-full mt-2 w-80 bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl">
-          <div className="p-2">
-            <button
-              onClick={() => {/* Create new canvas */}}
-              className="w-full px-3 py-2 text-left hover:bg-zinc-800 rounded flex items-center gap-2"
-            >
-              <PlusIcon className="w-4 h-4" />
-              New Canvas
-            </button>
-          </div>
-
-          <div className="border-t border-zinc-800 max-h-96 overflow-y-auto">
-            {canvases.map(canvas => (
-              <CanvasCard
-                key={canvas.id}
-                canvas={canvas}
-                isActive={canvas.id === currentCanvas.id}
-                onClick={() => {
-                  onSwitch(canvas.id);
-                  setIsOpen(false);
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <Card className="w-[450px] pointer-events-auto">
+        <CardHeader>
+          <CardTitle>Start Your Exploration</CardTitle>
+          <CardDescription>
+            Choose how you want to begin your research journey
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-4">
+          <Button variant="outline" onClick={() => onAction('note')} className="h-20 flex-col gap-2">
+            <StickyNote className="h-6 w-6" />
+            <span>Create Note</span>
+          </Button>
+          <Button variant="outline" onClick={() => onAction('question')} className="h-20 flex-col gap-2">
+            <MessageSquare className="h-6 w-6" />
+            <span>Ask Question</span>
+          </Button>
+          <Button variant="outline" onClick={() => onAction('search')} className="h-20 flex-col gap-2">
+            <Search className="h-6 w-6" />
+            <span>Search Web</span>
+          </Button>
+          <Button variant="outline" onClick={() => onAction('voice')} className="h-20 flex-col gap-2">
+            <Mic className="h-6 w-6" />
+            <span>Voice Note</span>
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
 ```
 
-**Features:**
-- ✅ Create new blank canvas
-- ✅ Switch between canvases (loads state from IndexedDB)
-- ✅ Rename canvas (double-click name)
-- ✅ Delete canvas (with confirmation)
-- ✅ Canvas thumbnail generation (canvas screenshot)
-- ✅ Last edited timestamp
-- ✅ Node count display
-
-**Complexity:** Medium
-**Design Notes:** Use Radix UI Dropdown Menu for accessibility
-
----
-
-## 1.3 Load/Save Integration
-
-**Modified Files:**
-- `app/components/SearchView.tsx`
-
-**Key Changes:**
-
 ```typescript
-// SearchView.tsx - Add canvas state management
-function SearchView({ canvasId }: { canvasId: string }) {
-  const [canvas, setCanvas] = useState<Canvas | null>(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
-  const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 1 });
+// app/components/canvas/FloatingActionMenu.tsx
+import { Plus, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { NodeTypeButton } from "./NodeTypeButton";
 
-  // Auto-save hook
-  useAutoSave(canvasId, nodes, edges, conversationHistory, viewport);
+export function FloatingActionMenu({ onCreateNode }: { onCreateNode: (type: NodeType) => void }) {
+  const [isOpen, setIsOpen] = useState(false);
 
-  // Load canvas on mount or canvasId change
-  useEffect(() => {
-    async function loadCanvas() {
-      const canvasData = await canvasStore.get(canvasId);
-      const state = await canvasStore.getState(canvasId);
-
-      if (!state) {
-        // First time - create default state
-        await canvasStore.saveState({
-          canvasId,
-          nodes: [],
-          edges: [],
-          viewport: { x: 0, y: 0, zoom: 1 },
-          conversationHistory: [],
-          metadata: {
-            nodeCount: 0,
-            lastEditedAt: new Date(),
-            version: 1,
-          },
-        });
-      } else {
-        // Restore state
-        setNodes(state.nodes);
-        setEdges(state.edges);
-        setConversationHistory(state.conversationHistory);
-        setViewport(state.viewport);
-      }
-
-      setCanvas(canvasData);
-    }
-
-    loadCanvas();
-  }, [canvasId]);
-
-  // ... rest of component
+  return (
+    <div className="fixed bottom-8 right-8 z-50">
+      {isOpen && (
+        <div className="mb-4 flex flex-col gap-2 animate-in slide-in-from-bottom-2">
+          <NodeTypeButton type="chat" onClick={() => { onCreateNode('chat'); setIsOpen(false); }} />
+          <NodeTypeButton type="note" onClick={() => { onCreateNode('note'); setIsOpen(false); }} />
+          <NodeTypeButton type="query" onClick={() => { onCreateNode('query'); setIsOpen(false); }} />
+          <NodeTypeButton type="thought" onClick={() => { onCreateNode('thought'); setIsOpen(false); }} />
+        </div>
+      )}
+      <Button
+        size="lg"
+        className="h-14 w-14 rounded-full shadow-xl"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {isOpen ? <X className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
+      </Button>
+    </div>
+  );
 }
 ```
 
-**Testing:**
-- Create canvas → add nodes → reload page → verify state persists
-- Switch between canvases → verify correct state loads
-- Concurrent tab testing → verify IndexedDB transactions
-
-**Complexity:** Low-Medium
-
----
-
-## Deliverables - Phase 1
-
-✅ IndexedDB schema & CRUD operations
-✅ Canvas switcher UI component
-✅ Auto-save system with debouncing
-✅ Load/restore canvas state
-✅ Create/delete canvas functionality
-✅ Canvas thumbnail generation
-
-**Success Criteria:**
-- User can create unlimited canvases
-- State persists across page reloads
-- Auto-save works without user intervention
-- Canvas switching is instant (<100ms)
-
----
-
-# PHASE 2: Manual Node Creation & Node Type System
-**Priority:** 🔴 Critical
-**Estimated Time:** 2-3 weeks
-**Dependencies:** Phase 1 (storage layer)
-
-## Goals
-- Click-to-create nodes anywhere on canvas
-- Multiple node types (chat, note, query, PDF, image)
-- Edit node content after creation
-- Keyboard shortcuts for node creation
-
----
-
-## 2.1 Node Type System
-
-**New Files:**
-- `app/components/nodes/ChatNode.tsx` - Interactive chat node
-- `app/components/nodes/NoteNode.tsx` - Plain text/markdown note
-- `app/components/nodes/QueryNode.tsx` - Question node (existing, refactored)
-- `app/components/nodes/PDFNode.tsx` - PDF display node (Phase 4)
-- `app/components/nodes/ImageNode.tsx` - Image generation node (Phase 5)
-- `app/lib/nodeFactory.ts` - Factory pattern for node creation
-
 **Modified Files:**
-- `app/components/SearchView.tsx` - Register new node types
+- `app/components/SearchView.tsx` - Add empty canvas detection, floating menu
+- `app/components/RabbitFlow.tsx` - Add `onPaneClick` handler for canvas clicking
 
-**Node Type Specifications:**
+**Canvas Click Implementation:**
 
 ```typescript
-// app/lib/nodeFactory.ts
+// In RabbitFlow.tsx - Add click-to-create
+const [selectedNodeType, setSelectedNodeType] = useState<NodeType | null>(null);
 
-export enum NodeType {
-  CHAT = 'chat',
-  NOTE = 'note',
-  QUERY = 'query',
-  PDF = 'pdf',
-  IMAGE = 'image',
-}
+const handlePaneClick = useCallback((event: React.MouseEvent) => {
+  if (!selectedNodeType) return;
 
-export interface BaseNodeData {
-  id: string;
-  type: NodeType;
-  label: string;
-  content: string;
-  createdAt: Date;
-  updatedAt: Date;
-  position: XYPosition;
-  isExpanded: boolean;
-}
+  const position = reactFlowInstance.screenToFlowPosition({
+    x: event.clientX,
+    y: event.clientY,
+  });
 
-export interface ChatNodeData extends BaseNodeData {
-  type: NodeType.CHAT;
-  conversationThread: ConversationMessage[];
-  systemPrompt?: string;
-  model?: string;
-  contextSources?: string[];  // Node IDs
-}
+  onCreateNode(selectedNodeType, position);
+  setSelectedNodeType(null);
+}, [selectedNodeType, reactFlowInstance, onCreateNode]);
 
-export interface NoteNodeData extends BaseNodeData {
-  type: NodeType.NOTE;
-  backgroundColor?: string;
-  fontSize?: number;
-}
-
-export interface QueryNodeData extends BaseNodeData {
-  type: NodeType.QUERY;
-  isProcessed: boolean;
-  sources?: SourceLink[];
-  images?: ImageData[];
-}
-
-export function createNode(
-  type: NodeType,
-  position: XYPosition,
-  initialData?: Partial<BaseNodeData>
-): Node {
-  const id = generateId();
-
-  const baseNode = {
-    id,
-    position,
-    data: {
-      id,
-      type,
-      label: initialData?.label || 'Untitled',
-      content: initialData?.content || '',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      isExpanded: true,
-      ...initialData,
-    },
-  };
-
-  switch (type) {
-    case NodeType.CHAT:
-      return {
-        ...baseNode,
-        type: 'chatNode',
-        data: {
-          ...baseNode.data,
-          conversationThread: [],
-          systemPrompt: undefined,
-        } as ChatNodeData,
-      };
-
-    case NodeType.NOTE:
-      return {
-        ...baseNode,
-        type: 'noteNode',
-        data: {
-          ...baseNode.data,
-          backgroundColor: '#1a1a1a',
-        } as NoteNodeData,
-      };
-
-    case NodeType.QUERY:
-      return {
-        ...baseNode,
-        type: 'queryNode',
-        data: {
-          ...baseNode.data,
-          isProcessed: false,
-          sources: [],
-          images: [],
-        } as QueryNodeData,
-      };
-
-    default:
-      return baseNode as Node;
-  }
-}
+<ReactFlow
+  onPaneClick={handlePaneClick}
+  style={{ cursor: selectedNodeType ? 'crosshair' : 'default' }}
+  // ... other props
+/>
 ```
 
-**ChatNode Component:**
+**shadcn/ui components to install:**
+```bash
+npx shadcn@latest add button card dialog dropdown-menu
+```
+
+---
+
+## 1.2 Node Type System (Using React Flow UI)
+
+**Objective:** Create multiple node types with consistent styling using React Flow UI components.
+
+**Install React Flow UI Components:**
+```bash
+npx shadcn@latest add https://ui.reactflow.dev/base-node
+npx shadcn@latest add https://ui.reactflow.dev/labeled-handle
+```
+
+**New Node Components:**
+
+### Chat Node (Interactive Conversation)
 
 ```typescript
 // app/components/nodes/ChatNode.tsx
+import { type NodeProps, Position, useReactFlow } from '@xyflow/react';
+import { BaseNode, BaseNodeContent, BaseNodeFooter, BaseNodeHeader, BaseNodeHeaderTitle } from '@/components/base-node';
+import { LabeledHandle } from '@/components/labeled-handle';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useState, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
+
+interface ChatNodeData {
+  label: string;
+  conversationThread: Array<{ role: string; content: string }>;
+  systemPrompt?: string;
+}
+
 export function ChatNode({ id, data }: NodeProps<ChatNodeData>) {
-  const [messages, setMessages] = useState<ConversationMessage[]>(data.conversationThread || []);
+  const { updateNodeData } = useReactFlow();
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const sendMessage = async () => {
+  const sendMessage = useCallback(async () => {
     if (!input.trim()) return;
 
     const userMessage = { role: 'user', content: input };
-    setMessages(prev => [...prev, userMessage]);
+    const updatedThread = [...(data.conversationThread || []), userMessage];
+
+    updateNodeData(id, { conversationThread: updatedThread });
     setInput('');
     setIsLoading(true);
 
     try {
-      // Get context from connected nodes if enabled
-      const contextNodes = data.contextSources || [];
-      const context = await buildContextFromNodes(contextNodes);
-
-      const response = await api.searchRabbitHole({
-        query: input,
-        previousConversation: [...messages, userMessage],
-        concept: data.label,
-        followUpMode: 'focused',
+      // Call AI API
+      const response = await fetch('/api/rabbitholes/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: input,
+          previousConversation: updatedThread,
+          followUpMode: 'focused',
+        }),
       });
 
-      const assistantMessage = {
-        role: 'assistant',
-        content: response.response,
-      };
+      const result = await response.json();
 
-      setMessages(prev => [...prev, assistantMessage]);
-
-      // Update node data
+      const assistantMessage = { role: 'assistant', content: result.response };
       updateNodeData(id, {
-        ...data,
-        conversationThread: [...messages, userMessage, assistantMessage],
-        updatedAt: new Date(),
+        conversationThread: [...updatedThread, assistantMessage],
       });
     } catch (error) {
       console.error('Chat error:', error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [input, data.conversationThread, id, updateNodeData]);
 
   return (
     <BaseNode className="w-[500px]">
-      <BaseNodeHeader>
-        <input
-          value={data.label}
-          onChange={(e) => updateNodeData(id, { ...data, label: e.target.value })}
-          className="bg-transparent border-none outline-none w-full"
-        />
+      <BaseNodeHeader className="border-b">
+        <BaseNodeHeaderTitle>{data.label}</BaseNodeHeaderTitle>
       </BaseNodeHeader>
 
       <BaseNodeContent className="h-[400px] flex flex-col">
-        {/* Message history */}
-        <div className="flex-1 overflow-y-auto space-y-4 mb-4">
-          {messages.map((msg, i) => (
+        <div className="flex-1 overflow-y-auto space-y-3 mb-3">
+          {data.conversationThread?.map((msg, i) => (
             <div
               key={i}
               className={`p-3 rounded-lg ${
-                msg.role === 'user'
-                  ? 'bg-blue-600/20 ml-8'
-                  : 'bg-zinc-800 mr-8'
+                msg.role === 'user' ? 'bg-blue-600/20 ml-8' : 'bg-muted mr-8'
               }`}
             >
-              <ReactMarkdown>{msg.content}</ReactMarkdown>
+              <ReactMarkdown className="prose prose-sm dark:prose-invert max-w-none">
+                {msg.content}
+              </ReactMarkdown>
             </div>
           ))}
-          {isLoading && <LoadingSpinner />}
+          {isLoading && <div className="text-sm text-muted-foreground">Thinking...</div>}
         </div>
 
-        {/* Input area */}
         <div className="flex gap-2">
-          <input
+          <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
             placeholder="Ask a question..."
-            className="flex-1 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg"
-          />
-          <button
-            onClick={sendMessage}
             disabled={isLoading}
-            className="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700"
-          >
+          />
+          <Button onClick={sendMessage} disabled={isLoading}>
             Send
-          </button>
+          </Button>
         </div>
       </BaseNodeContent>
 
-      <BaseNodeFooter>
-        <LabeledHandle type="target" position={Position.Left} label="Input" />
-        <LabeledHandle type="source" position={Position.Right} label="Output" />
+      <BaseNodeFooter className="bg-muted/50 px-0 py-1">
+        <LabeledHandle type="target" position={Position.Left} title="in" />
+        <LabeledHandle type="source" position={Position.Right} title="out" />
       </BaseNodeFooter>
     </BaseNode>
   );
 }
 ```
 
-**NoteNode Component:**
+### Note Node (Markdown Editor)
 
 ```typescript
 // app/components/nodes/NoteNode.tsx
+import { type NodeProps, Position, useReactFlow } from '@xyflow/react';
+import { BaseNode, BaseNodeContent, BaseNodeFooter, BaseNodeHeader } from '@/components/base-node';
+import { LabeledHandle } from '@/components/labeled-handle';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+
+interface NoteNodeData {
+  label: string;
+  content: string;
+}
+
 export function NoteNode({ id, data }: NodeProps<NoteNodeData>) {
+  const { updateNodeData } = useReactFlow();
   const [isEditing, setIsEditing] = useState(false);
-  const [content, setContent] = useState(data.content);
+  const [content, setContent] = useState(data.content || '');
 
   const saveContent = () => {
-    updateNodeData(id, {
-      ...data,
-      content,
-      updatedAt: new Date(),
-    });
+    updateNodeData(id, { content });
     setIsEditing(false);
   };
 
   return (
-    <BaseNode className="w-[400px]" style={{ backgroundColor: data.backgroundColor }}>
-      <BaseNodeHeader>
-        <input
+    <BaseNode className="w-[400px]">
+      <BaseNodeHeader className="border-b">
+        <Input
           value={data.label}
-          onChange={(e) => updateNodeData(id, { ...data, label: e.target.value })}
-          className="bg-transparent border-none outline-none w-full"
+          onChange={(e) => updateNodeData(id, { label: e.target.value })}
+          className="border-0 bg-transparent focus-visible:ring-0"
+          placeholder="Note title..."
         />
       </BaseNodeHeader>
 
       <BaseNodeContent className="min-h-[200px]">
         {isEditing ? (
-          <textarea
+          <Textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onBlur={saveContent}
-            className="w-full h-full bg-transparent border-none outline-none resize-none"
+            className="w-full h-full min-h-[200px] resize-none"
+            placeholder="Write your notes here..."
             autoFocus
           />
         ) : (
           <div
             onClick={() => setIsEditing(true)}
-            className="cursor-text prose prose-invert"
+            className="cursor-text min-h-[200px] prose prose-sm dark:prose-invert max-w-none"
           >
             {content ? (
               <ReactMarkdown>{content}</ReactMarkdown>
             ) : (
-              <p className="text-zinc-500">Click to add notes...</p>
+              <p className="text-muted-foreground">Click to add notes...</p>
             )}
           </div>
         )}
       </BaseNodeContent>
 
-      <BaseNodeFooter>
+      <BaseNodeFooter className="bg-muted/50 px-0 py-1">
         <LabeledHandle type="target" position={Position.Left} />
         <LabeledHandle type="source" position={Position.Right} />
       </BaseNodeFooter>
@@ -702,664 +373,638 @@ export function NoteNode({ id, data }: NodeProps<NoteNodeData>) {
 }
 ```
 
-**Complexity:** Medium
-**Testing:** Node creation, data persistence, type-specific behavior
+**Additional shadcn components to install:**
+```bash
+npx shadcn@latest add input textarea
+```
+
+**Node Type Registry:**
+
+```typescript
+// app/lib/nodeTypes.ts
+export enum NodeType {
+  CHAT = 'chat',
+  NOTE = 'note',
+  QUERY = 'query',
+  THOUGHT = 'thought',
+  REFERENCE = 'reference',
+  INSIGHT = 'insight',
+}
+
+export const nodeTypeMetadata = {
+  [NodeType.CHAT]: {
+    label: 'Chat',
+    icon: '💬',
+    color: 'bg-blue-600',
+    description: 'Interactive conversation with AI',
+  },
+  [NodeType.NOTE]: {
+    label: 'Note',
+    icon: '📝',
+    color: 'bg-green-600',
+    description: 'Markdown notes and documentation',
+  },
+  [NodeType.QUERY]: {
+    label: 'Query',
+    icon: '❓',
+    color: 'bg-purple-600',
+    description: 'Research question with web search',
+  },
+  [NodeType.THOUGHT]: {
+    label: 'Thought',
+    icon: '💭',
+    color: 'bg-yellow-600',
+    description: 'Quick idea or brainstorm',
+  },
+};
+```
 
 ---
 
-## 2.2 Click-to-Create System
+## 1.3 Exploration Mode Selector
 
-**New Files:**
-- `app/components/NodeCreationToolbar.tsx` - Floating toolbar for node types
-- `app/hooks/useCanvasClick.ts` - Handle canvas click events
+**Objective:** Let users choose their exploration mode.
 
-**Modified Files:**
-- `app/components/RabbitFlow.tsx` - Add canvas click handler
-
-**Implementation:**
+**New Component:**
 
 ```typescript
-// app/components/NodeCreationToolbar.tsx
-export function NodeCreationToolbar({ onCreateNode }: { onCreateNode: (type: NodeType) => void }) {
-  const [isOpen, setIsOpen] = useState(false);
+// app/components/canvas/ExplorationModeSelector.tsx
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { InfoIcon } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
+export type ExplorationMode = 'manual' | 'guided' | 'hybrid' | 'classic';
+
+const modes = {
+  manual: {
+    label: 'Manual',
+    description: 'Full control - AI assists only when asked',
+  },
+  guided: {
+    label: 'Guided',
+    description: 'AI suggests, you decide',
+  },
+  hybrid: {
+    label: 'Hybrid',
+    description: 'Mix of manual and AI-assisted',
+  },
+  classic: {
+    label: 'Classic',
+    description: 'Automatic exploration (original)',
+  },
+};
+
+export function ExplorationModeSelector({
+  value,
+  onChange
+}: {
+  value: ExplorationMode;
+  onChange: (mode: ExplorationMode) => void;
+}) {
   return (
-    <div className="fixed bottom-8 right-8 z-50">
-      {isOpen && (
-        <div className="mb-2 flex flex-col gap-2">
-          <button
-            onClick={() => onCreateNode(NodeType.CHAT)}
-            className="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center gap-2"
-          >
-            <MessageSquareIcon className="w-4 h-4" />
-            Chat Node
-          </button>
-          <button
-            onClick={() => onCreateNode(NodeType.NOTE)}
-            className="px-4 py-2 bg-green-600 rounded-lg hover:bg-green-700 flex items-center gap-2"
-          >
-            <StickyNoteIcon className="w-4 h-4" />
-            Note
-          </button>
-          <button
-            onClick={() => onCreateNode(NodeType.QUERY)}
-            className="px-4 py-2 bg-purple-600 rounded-lg hover:bg-purple-700 flex items-center gap-2"
-          >
-            <SearchIcon className="w-4 h-4" />
-            Query
-          </button>
-        </div>
-      )}
+    <div className="flex items-center gap-2">
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="w-[180px]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {Object.entries(modes).map(([key, mode]) => (
+            <SelectItem key={key} value={key}>
+              {mode.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-14 h-14 bg-zinc-900 border-2 border-zinc-700 rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform"
-      >
-        {isOpen ? <XIcon /> : <PlusIcon className="w-6 h-6" />}
-      </button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger>
+            <InfoIcon className="h-4 w-4 text-muted-foreground" />
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="max-w-xs">{modes[value].description}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   );
 }
 ```
 
-```typescript
-// app/hooks/useCanvasClick.ts
-export function useCanvasClick(
-  reactFlowInstance: ReactFlowInstance,
-  onCreateNode: (type: NodeType, position: XYPosition) => void
-) {
-  const [selectedNodeType, setSelectedNodeType] = useState<NodeType | null>(null);
-
-  const handlePaneClick = useCallback(
-    (event: React.MouseEvent) => {
-      if (!selectedNodeType) return;
-
-      // Convert screen coordinates to flow coordinates
-      const position = reactFlowInstance.screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      });
-
-      onCreateNode(selectedNodeType, position);
-      setSelectedNodeType(null);
-    },
-    [selectedNodeType, reactFlowInstance, onCreateNode]
-  );
-
-  return { handlePaneClick, selectedNodeType, setSelectedNodeType };
-}
+**Install components:**
+```bash
+npx shadcn@latest add select tooltip
 ```
-
-**Modified RabbitFlow.tsx:**
-
-```typescript
-function RabbitFlow({ nodes, edges, onNodesChange, onEdgesChange, onCreateNode }) {
-  const reactFlowInstance = useReactFlow();
-  const { handlePaneClick, selectedNodeType, setSelectedNodeType } = useCanvasClick(
-    reactFlowInstance,
-    onCreateNode
-  );
-
-  return (
-    <>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onPaneClick={handlePaneClick}
-        style={{ cursor: selectedNodeType ? 'crosshair' : 'default' }}
-        // ... other props
-      />
-
-      <NodeCreationToolbar
-        onCreateNode={(type) => setSelectedNodeType(type)}
-      />
-    </>
-  );
-}
-```
-
-**User Flow:**
-1. Click floating + button
-2. Select node type from menu
-3. Canvas cursor changes to crosshair
-4. Click anywhere on canvas
-5. Node created at click position
-6. Cursor resets to normal
-
-**Complexity:** Low-Medium
 
 ---
 
-## 2.3 Keyboard Shortcuts
+## Deliverables - Phase 1
 
-**New Files:**
-- `app/hooks/useKeyboardShortcuts.ts`
-- `app/components/ShortcutHelpDialog.tsx`
-
-**Implementation:**
-
-```typescript
-// app/hooks/useKeyboardShortcuts.ts
-export function useKeyboardShortcuts(actions: {
-  createChatNode: () => void;
-  createNoteNode: () => void;
-  createQueryNode: () => void;
-  deleteSelectedNodes: () => void;
-  duplicateSelectedNodes: () => void;
-  toggleSearch: () => void;
-  saveCanvas: () => void;
-}) {
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if typing in input/textarea
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        return;
-      }
-
-      const isMod = e.metaKey || e.ctrlKey;
-
-      // Cmd/Ctrl + N - New chat node
-      if (isMod && e.key === 'n') {
-        e.preventDefault();
-        actions.createChatNode();
-      }
-
-      // Cmd/Ctrl + Shift + N - New note
-      if (isMod && e.shiftKey && e.key === 'N') {
-        e.preventDefault();
-        actions.createNoteNode();
-      }
-
-      // Cmd/Ctrl + K - Search
-      if (isMod && e.key === 'k') {
-        e.preventDefault();
-        actions.toggleSearch();
-      }
-
-      // Delete/Backspace - Delete selected nodes
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        e.preventDefault();
-        actions.deleteSelectedNodes();
-      }
-
-      // Cmd/Ctrl + D - Duplicate
-      if (isMod && e.key === 'd') {
-        e.preventDefault();
-        actions.duplicateSelectedNodes();
-      }
-
-      // Cmd/Ctrl + S - Save
-      if (isMod && e.key === 's') {
-        e.preventDefault();
-        actions.saveCanvas();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [actions]);
-}
-```
-
-**Keyboard Shortcuts:**
-- `Cmd/Ctrl + N` - Create chat node at center
-- `Cmd/Ctrl + Shift + N` - Create note node
-- `Cmd/Ctrl + K` - Open search palette
-- `Delete/Backspace` - Delete selected nodes
-- `Cmd/Ctrl + D` - Duplicate selected nodes
-- `Cmd/Ctrl + S` - Manual save (auto-save also active)
-- `?` - Show shortcuts help dialog
-
-**Complexity:** Low
-
----
-
-## Deliverables - Phase 2
-
-✅ Node type system (Chat, Note, Query)
-✅ ChatNode with conversation threading
-✅ NoteNode with inline editing
-✅ Click-to-create on canvas
-✅ Floating toolbar for node creation
-✅ Keyboard shortcuts system
-✅ Shortcuts help dialog
+✅ Empty canvas welcome screen
+✅ Floating action menu for node creation
+✅ Click-to-create nodes anywhere on canvas
+✅ Chat node with conversation threading
+✅ Note node with markdown editing
+✅ Node type system and registry
+✅ Exploration mode selector
+✅ Keyboard shortcuts (Cmd+N for new node)
 
 **Success Criteria:**
-- User can create nodes anywhere on canvas
-- Chat nodes maintain independent conversation threads
-- Note nodes support markdown editing
-- Keyboard shortcuts work reliably
-- Node data persists in IndexedDB
+- Canvas starts empty with welcome prompt
+- Users can click anywhere to create nodes
+- Multiple node types available
+- Each node type has distinct behavior
+- Mode selector changes AI behavior
 
 ---
 
-# PHASE 3: Infinite Canvas & Navigation
-**Priority:** 🟡 Important
-**Estimated Time:** 1-2 weeks
-**Dependencies:** Phase 1, Phase 2
+# PHASE 2: AI Suggestion System (Non-Intrusive)
+**Priority:** 🔴 Critical
+**Estimated Time:** 2 weeks
+**Goal:** Add optional AI suggestions that enhance without dictating
 
-## Goals
-- Truly infinite canvas (remove boundaries)
-- Minimap for navigation
-- Zoom controls UI
-- Current position indicator
-- Smooth panning
+## 2.1 Collapsible Suggestion Panel
 
----
+**Objective:** AI suggests next steps, but users control visibility and acceptance.
 
-## 3.1 Infinite Canvas Configuration
-
-**Modified Files:**
-- `app/components/RabbitFlow.tsx`
-
-**Implementation:**
+**New Component:**
 
 ```typescript
-// RabbitFlow.tsx - Configure infinite canvas
-<ReactFlow
-  nodes={nodes}
-  edges={edges}
-  nodeTypes={nodeTypes}
+// app/components/ai/SuggestionPanel.tsx
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChevronRight, ChevronLeft, Sparkles, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
-  // INFINITE CANVAS SETTINGS
-  minZoom={0.1}          // 10% zoom out
-  maxZoom={2}            // 200% zoom in
-  defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+interface Suggestion {
+  type: 'question' | 'connection' | 'expansion';
+  content: string;
+  reasoning?: string;
+}
 
-  // Remove boundaries
-  translateExtent={[
-    [-Infinity, -Infinity],
-    [Infinity, Infinity]
-  ]}
-  nodeExtent={[
-    [-Infinity, -Infinity],
-    [Infinity, Infinity]
-  ]}
-
-  // Panning settings
-  panOnDrag={true}
-  panOnScroll={false}
-  zoomOnScroll={true}
-  zoomOnPinch={true}
-  zoomOnDoubleClick={false}
-
-  // Prevent node dragging off canvas
-  autoPanOnNodeDrag={true}
-
-  // Save viewport on change
-  onViewportChange={(viewport) => {
-    setViewport(viewport);
-  }}
-
-  // ... other props
->
-  {/* Children components */}
-</ReactFlow>
-```
-
-**Complexity:** Low (mostly configuration)
-
----
-
-## 3.2 Minimap Component
-
-**New Files:**
-- `app/components/CanvasMinimap.tsx`
-
-**Implementation:**
-
-```typescript
-// RabbitFlow.tsx
-import { MiniMap } from '@xyflow/react';
-
-<ReactFlow {...props}>
-  <MiniMap
-    nodeColor={(node) => {
-      switch (node.type) {
-        case 'chatNode': return '#3b82f6';  // Blue
-        case 'noteNode': return '#10b981';  // Green
-        case 'queryNode': return '#a855f7'; // Purple
-        default: return '#6b7280';          // Gray
-      }
-    }}
-    maskColor="rgba(0, 0, 0, 0.6)"
-    style={{
-      backgroundColor: '#1a1a1a',
-      border: '1px solid #3f3f46',
-      borderRadius: '8px',
-    }}
-    position="bottom-right"
-  />
-
-  <Controls
-    position="top-right"
-    showZoom={true}
-    showFitView={true}
-    showInteractive={true}
-    style={{
-      backgroundColor: '#1a1a1a',
-      border: '1px solid #3f3f46',
-      borderRadius: '8px',
-    }}
-  />
-
-  <Background
-    color="#27272a"
-    gap={16}
-    variant={BackgroundVariant.Dots}
-  />
-</ReactFlow>
-```
-
-**Features:**
-- Color-coded nodes by type
-- Viewport indicator (draggable)
-- Position in bottom-right corner
-- Click to jump to area
-
-**Complexity:** Low (using ReactFlow built-in components)
-
----
-
-## 3.3 Navigation Toolbar
-
-**New Files:**
-- `app/components/NavigationToolbar.tsx`
-
-**Implementation:**
-
-```typescript
-// app/components/NavigationToolbar.tsx
-export function NavigationToolbar() {
-  const reactFlowInstance = useReactFlow();
-  const [viewport, setViewport] = useState(reactFlowInstance.getViewport());
-
-  const zoomIn = () => reactFlowInstance.zoomIn();
-  const zoomOut = () => reactFlowInstance.zoomOut();
-  const fitView = () => reactFlowInstance.fitView({ padding: 0.2 });
-  const resetView = () => reactFlowInstance.setViewport({ x: 0, y: 0, zoom: 1 });
+export function SuggestionPanel({
+  currentNode,
+  onAccept,
+  onDismiss,
+  onRefresh,
+}: {
+  currentNode: Node | null;
+  onAccept: (suggestion: Suggestion) => void;
+  onDismiss: (suggestion: Suggestion) => void;
+  onRefresh: () => void;
+}) {
+  const [isOpen, setIsOpen] = useState(true);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = reactFlowInstance.onViewportChange((vp) => {
-      setViewport(vp);
-    });
-    return unsubscribe;
-  }, [reactFlowInstance]);
+    if (currentNode && isOpen) {
+      loadSuggestions();
+    }
+  }, [currentNode, isOpen]);
+
+  const loadSuggestions = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/suggestions', {
+        method: 'POST',
+        body: JSON.stringify({ nodeId: currentNode?.id }),
+      });
+      const data = await response.json();
+      setSuggestions(data.suggestions);
+    } catch (error) {
+      console.error('Failed to load suggestions:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!isOpen) {
+    return (
+      <Button
+        variant="outline"
+        size="icon"
+        className="fixed right-4 top-1/2 -translate-y-1/2"
+        onClick={() => setIsOpen(true)}
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
+    );
+  }
 
   return (
-    <div className="fixed top-4 right-4 bg-zinc-900 border border-zinc-800 rounded-lg p-2 flex flex-col gap-2">
-      <button onClick={zoomIn} className="p-2 hover:bg-zinc-800 rounded">
-        <ZoomInIcon className="w-5 h-5" />
-      </button>
-      <button onClick={zoomOut} className="p-2 hover:bg-zinc-800 rounded">
-        <ZoomOutIcon className="w-5 h-5" />
-      </button>
-      <button onClick={fitView} className="p-2 hover:bg-zinc-800 rounded" title="Fit View">
-        <MaximizeIcon className="w-5 h-5" />
-      </button>
-      <button onClick={resetView} className="p-2 hover:bg-zinc-800 rounded" title="Reset View">
-        <HomeIcon className="w-5 h-5" />
-      </button>
+    <div className="fixed right-0 top-0 h-full w-80 bg-background border-l shadow-lg overflow-y-auto">
+      <div className="sticky top-0 bg-background border-b p-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-primary" />
+          <h3 className="font-semibold">AI Suggestions</h3>
+        </div>
+        <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
 
-      <div className="border-t border-zinc-800 pt-2 text-xs text-zinc-400 text-center">
-        {Math.round(viewport.zoom * 100)}%
+      <div className="p-4 space-y-4">
+        {!currentNode && (
+          <p className="text-sm text-muted-foreground">
+            Select a node to see suggestions
+          </p>
+        )}
+
+        {isLoading && <div className="text-sm">Loading suggestions...</div>}
+
+        {suggestions.map((suggestion, i) => (
+          <Card key={i}>
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between">
+                <Badge variant="secondary">{suggestion.type}</Badge>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() => onDismiss(suggestion)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm">{suggestion.content}</p>
+              {suggestion.reasoning && (
+                <p className="text-xs text-muted-foreground">
+                  {suggestion.reasoning}
+                </p>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => onAccept(suggestion)}
+                >
+                  Accept
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {/* Open edit dialog */}}
+                >
+                  Modify
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+
+        {suggestions.length > 0 && (
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={onRefresh}
+          >
+            Request Different Suggestions
+          </Button>
+        )}
       </div>
     </div>
   );
 }
 ```
 
-**Features:**
-- Zoom in/out buttons
-- Fit view (show all nodes)
-- Reset to origin
-- Current zoom percentage display
-
-**Complexity:** Low
+**Install components:**
+```bash
+npx shadcn@latest add badge
+```
 
 ---
 
-## 3.4 Position Indicator
+## 2.2 Contextual AI Actions (Right-Click Menu)
 
-**New Files:**
-- `app/components/PositionIndicator.tsx`
-
-**Implementation:**
+**New Component:**
 
 ```typescript
-// app/components/PositionIndicator.tsx
-export function PositionIndicator() {
-  const reactFlowInstance = useReactFlow();
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+// app/components/ai/ContextualActions.tsx
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import {
+  Lightbulb,
+  HelpCircle,
+  AlertTriangle,
+  Search,
+  CheckCheck,
+  Link2
+} from "lucide-react";
 
-  useEffect(() => {
-    const unsubscribe = reactFlowInstance.onViewportChange((viewport) => {
-      setPosition({ x: Math.round(viewport.x), y: Math.round(viewport.y) });
-    });
-    return unsubscribe;
-  }, [reactFlowInstance]);
-
+export function NodeContextMenu({
+  children,
+  node,
+  onAction
+}: {
+  children: React.ReactNode;
+  node: Node;
+  onAction: (action: string) => void;
+}) {
   return (
-    <div className="fixed bottom-4 left-4 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-400 font-mono">
-      X: {position.x} Y: {position.y}
-    </div>
+    <ContextMenu>
+      <ContextMenuTrigger>{children}</ContextMenuTrigger>
+      <ContextMenuContent className="w-56">
+        <ContextMenuItem onClick={() => onAction('raise-questions')}>
+          <HelpCircle className="mr-2 h-4 w-4" />
+          What questions does this raise?
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => onAction('find-contradictions')}>
+          <AlertTriangle className="mr-2 h-4 w-4" />
+          Find contradicting viewpoints
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => onAction('suggest-connections')}>
+          <Link2 className="mr-2 h-4 w-4" />
+          Suggest connections
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onClick={() => onAction('expand')}>
+          <Lightbulb className="mr-2 h-4 w-4" />
+          Expand this idea
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => onAction('find-evidence')}>
+          <Search className="mr-2 h-4 w-4" />
+          Find supporting evidence
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => onAction('fact-check')}>
+          <CheckCheck className="mr-2 h-4 w-4" />
+          Fact-check this claim
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
 ```
 
-**Complexity:** Low
+**Install:**
+```bash
+npx shadcn@latest add context-menu
+```
 
 ---
 
-## Deliverables - Phase 3
-
-✅ Infinite canvas boundaries removed
-✅ Minimap with color-coded nodes
-✅ Zoom controls (in/out/fit/reset)
-✅ Background grid pattern
-✅ Position indicator
-✅ Smooth panning & zooming
-
-**Success Criteria:**
-- Canvas has no boundaries (can pan infinitely)
-- Minimap shows entire graph
-- Zoom controls work smoothly
-- Users can navigate large graphs easily
-
----
-
-# PHASE 4: Context Control & Branching
-**Priority:** 🟡 Important
-**Estimated Time:** 2-3 weeks
-**Dependencies:** Phase 2 (node types)
-
-## Goals
-- Manual connection drawing between nodes
-- Context sharing control per connection
-- Visual indicators for context flow
-- Branch conversation from any node
-- Cherry-pick context sources
-
----
-
-## 4.1 Manual Connection System
-
-**Modified Files:**
-- `app/components/RabbitFlow.tsx`
-- `app/components/nodes/ChatNode.tsx`
+## 2.3 Smart Connection Suggestions
 
 **Implementation:**
 
 ```typescript
-// Custom Edge Type
-// app/components/edges/ContextEdge.tsx
-export function ContextEdge({ id, source, target, data }: EdgeProps) {
-  const [edgePath, labelX, labelY] = getBezierPath({
-    sourceX,
-    sourceY,
-    targetX,
-    targetY,
+// app/components/ai/ConnectionSuggestions.tsx
+import { useEffect, useState } from 'react';
+import { useReactFlow, Node, Edge } from '@xyflow/react';
+
+interface SuggestedConnection {
+  source: string;
+  target: string;
+  reason: string;
+  confidence: number;
+}
+
+export function useConnectionSuggestions(nodes: Node[], edges: Edge[]) {
+  const [suggestions, setSuggestions] = useState<SuggestedConnection[]>([]);
+  const { addEdges } = useReactFlow();
+
+  useEffect(() => {
+    if (nodes.length < 2) return;
+
+    // Call AI to analyze potential connections
+    analyzePotentialConnections(nodes, edges).then(setSuggestions);
+  }, [nodes, edges]);
+
+  const acceptSuggestion = (suggestion: SuggestedConnection) => {
+    addEdges({
+      id: `${suggestion.source}-${suggestion.target}`,
+      source: suggestion.source,
+      target: suggestion.target,
+      type: 'suggested',
+      animated: true,
+      style: { strokeDasharray: '5,5' },
+    });
+
+    setSuggestions(prev =>
+      prev.filter(s => s.source !== suggestion.source || s.target !== suggestion.target)
+    );
+  };
+
+  return { suggestions, acceptSuggestion };
+}
+
+async function analyzePotentialConnections(
+  nodes: Node[],
+  edges: Edge[]
+): Promise<SuggestedConnection[]> {
+  // AI analyzes node content and suggests connections
+  const response = await fetch('/api/analyze-connections', {
+    method: 'POST',
+    body: JSON.stringify({ nodes, existingEdges: edges }),
   });
 
-  const [sharesContext, setSharesContext] = useState(data?.sharesContext ?? true);
+  return response.json();
+}
+```
 
-  const toggleContext = () => {
-    const newValue = !sharesContext;
-    setSharesContext(newValue);
-    updateEdgeData(id, { sharesContext: newValue });
-  };
+**Visual Representation:**
+
+```typescript
+// Show dotted lines for suggested connections
+const SuggestedEdge = ({ id, source, target, data }) => {
+  return (
+    <>
+      <BaseEdge
+        id={id}
+        path={edgePath}
+        style={{
+          strokeDasharray: '5,5',
+          stroke: '#666',
+          opacity: 0.5,
+        }}
+      />
+      <EdgeLabelRenderer>
+        <div
+          style={{
+            position: 'absolute',
+            transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+          }}
+        >
+          <Button size="sm" onClick={() => data.onAccept()}>
+            Connect?
+          </Button>
+        </div>
+      </EdgeLabelRenderer>
+    </>
+  );
+};
+```
+
+---
+
+## Deliverables - Phase 2
+
+✅ Collapsible AI suggestion panel
+✅ Contextual right-click AI actions
+✅ Smart connection suggestions with dotted preview
+✅ Accept/modify/dismiss for all suggestions
+✅ Request alternative suggestions
+✅ Suggestion reasoning display
+
+**Success Criteria:**
+- AI suggestions are helpful but never intrusive
+- Users can dismiss or hide all suggestions
+- Suggestions adapt based on exploration mode
+- Connection suggestions are visually distinct
+
+---
+
+# PHASE 3: Manual Connections & Context Control
+**Priority:** 🔴 Critical
+**Estimated Time:** 2 weeks
+**Goal:** Full control over node connections and context sharing
+
+## 3.1 Drag-to-Connect with Connection Types
+
+**Implementation using React Flow UI:**
+
+```bash
+npx shadcn@latest add https://ui.reactflow.dev/data-edge
+```
+
+**Enhanced Edge Component:**
+
+```typescript
+// app/components/edges/ContextualEdge.tsx
+import { BaseEdge, EdgeLabelRenderer, type EdgeProps } from '@xyflow/react';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Link, LinkOff, ArrowRight, ArrowLeftRight, Zap, Check, Plus } from 'lucide-react';
+
+type ConnectionType = 'leads-to' | 'related' | 'contradicts' | 'supports' | 'expands';
+
+const connectionTypes = {
+  'leads-to': { icon: ArrowRight, color: '#3b82f6', label: 'Leads to' },
+  'related': { icon: ArrowLeftRight, color: '#8b5cf6', label: 'Related to' },
+  'contradicts': { icon: Zap, color: '#ef4444', label: 'Contradicts' },
+  'supports': { icon: Check, color: '#10b981', label: 'Supports' },
+  'expands': { icon: Plus, color: '#f59e0b', label: 'Expands on' },
+};
+
+export function ContextualEdge({ id, source, target, data, ...props }: EdgeProps) {
+  const [sharesContext, setSharesContext] = useState(data?.sharesContext ?? true);
+  const [connectionType, setConnectionType] = useState<ConnectionType>(
+    data?.connectionType || 'leads-to'
+  );
+
+  const typeConfig = connectionTypes[connectionType];
+  const TypeIcon = typeConfig.icon;
 
   return (
     <>
-      <path
-        id={id}
-        className={sharesContext ? 'stroke-blue-500' : 'stroke-zinc-700'}
-        style={{ strokeWidth: 2 }}
-        d={edgePath}
+      <BaseEdge
+        {...props}
+        style={{
+          stroke: sharesContext ? typeConfig.color : '#666',
+          strokeWidth: 2,
+          opacity: sharesContext ? 1 : 0.5,
+        }}
       />
-
-      <foreignObject
-        width={40}
-        height={40}
-        x={labelX - 20}
-        y={labelY - 20}
-      >
-        <button
-          onClick={toggleContext}
-          className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${
-            sharesContext
-              ? 'bg-blue-600 border-blue-500'
-              : 'bg-zinc-800 border-zinc-700'
-          }`}
-          title={sharesContext ? 'Context Enabled' : 'Context Disabled'}
+      <EdgeLabelRenderer>
+        <div
+          style={{
+            position: 'absolute',
+            transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+            pointerEvents: 'all',
+          }}
+          className="flex gap-1"
         >
-          {sharesContext ? (
-            <LinkIcon className="w-4 h-4" />
-          ) : (
-            <LinkSlashIcon className="w-4 h-4" />
-          )}
-        </button>
-      </foreignObject>
+          <Button
+            size="sm"
+            variant={sharesContext ? "default" : "outline"}
+            className="h-8 w-8 p-0"
+            onClick={() => {
+              const newValue = !sharesContext;
+              setSharesContext(newValue);
+              updateEdgeData(id, { sharesContext: newValue });
+            }}
+          >
+            {sharesContext ? <Link className="h-4 w-4" /> : <LinkOff className="h-4 w-4" />}
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="outline" className="h-8 px-2">
+                <TypeIcon className="h-3 w-3 mr-1" />
+                {typeConfig.label}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {Object.entries(connectionTypes).map(([key, config]) => (
+                <DropdownMenuItem
+                  key={key}
+                  onClick={() => {
+                    setConnectionType(key as ConnectionType);
+                    updateEdgeData(id, { connectionType: key });
+                  }}
+                >
+                  <config.icon className="mr-2 h-4 w-4" />
+                  {config.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </EdgeLabelRenderer>
     </>
   );
 }
 ```
 
-**EdgeTypes Registration:**
-
-```typescript
-// SearchView.tsx
-const edgeTypes = {
-  context: ContextEdge,
-};
-
-// In ReactFlow component
-<ReactFlow
-  edgeTypes={edgeTypes}
-  defaultEdgeOptions={{
-    type: 'context',
-    animated: true,
-    style: { strokeWidth: 2 },
-  }}
-  connectionLineStyle={{ strokeWidth: 2, stroke: '#3b82f6' }}
-  // ... other props
-/>
-```
-
-**Context Building Function:**
-
-```typescript
-// app/lib/contextBuilder.ts
-export async function buildContextFromNodes(
-  nodeIds: string[],
-  currentCanvasId: string
-): Promise<string> {
-  const db = await initDB();
-  const canvasState = await db.get('canvasStates', currentCanvasId);
-
-  if (!canvasState) return '';
-
-  const contextParts: string[] = [];
-
-  for (const nodeId of nodeIds) {
-    const node = canvasState.nodes.find(n => n.id === nodeId);
-    if (!node) continue;
-
-    const nodeData = node.data as ChatNodeData | NoteNodeData | QueryNodeData;
-
-    contextParts.push(`## ${nodeData.label}\n${nodeData.content}\n`);
-
-    // Include conversation thread for chat nodes
-    if (nodeData.type === NodeType.CHAT && nodeData.conversationThread) {
-      const thread = nodeData.conversationThread
-        .map(msg => `${msg.role}: ${msg.content}`)
-        .join('\n');
-      contextParts.push(thread);
-    }
-  }
-
-  return contextParts.join('\n---\n');
-}
-```
-
-**Usage in ChatNode:**
-
-```typescript
-// ChatNode.tsx - sendMessage function
-const contextNodes = data.contextSources || [];
-
-// Get all incoming edges
-const incomingEdges = edges.filter(e =>
-  e.target === id &&
-  e.data?.sharesContext === true
-);
-
-// Extract source node IDs
-const contextSourceIds = incomingEdges.map(e => e.source);
-
-// Build context
-const context = await buildContextFromNodes(contextSourceIds, canvasId);
-
-// Include in API call
-const response = await api.searchRabbitHole({
-  query: input,
-  previousConversation: [
-    ...(context ? [{ role: 'system', content: `Context:\n${context}` }] : []),
-    ...messages,
-    userMessage,
-  ],
-  concept: data.label,
-});
-```
-
-**Complexity:** Medium
-
 ---
 
-## 4.2 Context Cherry-Picking UI
+## 3.2 Context Sources Panel
 
-**New Files:**
-- `app/components/ContextSourcesPanel.tsx`
-
-**Implementation:**
+**Component:**
 
 ```typescript
-// app/components/ContextSourcesPanel.tsx
-interface ContextSourcesPanelProps {
-  nodeId: string;
-  currentSources: string[];
-  availableNodes: Node[];
-  onUpdateSources: (sources: string[]) => void;
-}
+// app/components/context/ContextSourcesPanel.tsx
+import { useState } from 'react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export function ContextSourcesPanel({
   nodeId,
   currentSources,
   availableNodes,
   onUpdateSources,
-}: ContextSourcesPanelProps) {
+}: {
+  nodeId: string;
+  currentSources: string[];
+  availableNodes: Node[];
+  onUpdateSources: (sources: string[]) => void;
+}) {
   const [selectedSources, setSelectedSources] = useState<Set<string>>(
     new Set(currentSources)
   );
@@ -1375,1619 +1020,602 @@ export function ContextSourcesPanel({
     onUpdateSources(Array.from(newSources));
   };
 
-  // Calculate total token count (rough estimate)
   const estimatedTokens = Array.from(selectedSources).reduce((acc, sourceId) => {
     const node = availableNodes.find(n => n.id === sourceId);
-    if (!node) return acc;
-    return acc + (node.data.content?.length || 0) / 4; // Rough estimate
+    return acc + (node?.data.content?.length || 0) / 4;
   }, 0);
 
   return (
-    <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-lg">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold">Context Sources</h3>
-        <span className="text-xs text-zinc-400">
-          ~{Math.round(estimatedTokens)} tokens
-        </span>
-      </div>
-
-      <div className="space-y-2">
-        {availableNodes
-          .filter(n => n.id !== nodeId) // Exclude self
-          .map(node => (
-            <label
-              key={node.id}
-              className="flex items-center gap-2 p-2 hover:bg-zinc-800 rounded cursor-pointer"
-            >
-              <input
-                type="checkbox"
-                checked={selectedSources.has(node.id)}
-                onChange={() => toggleSource(node.id)}
-                className="w-4 h-4"
-              />
-              <div className="flex-1">
-                <div className="font-medium text-sm">{node.data.label}</div>
-                <div className="text-xs text-zinc-400">
-                  {node.data.content?.slice(0, 60)}...
-                </div>
-              </div>
-              <span className="text-xs text-zinc-500">
-                {Math.round((node.data.content?.length || 0) / 4)} tokens
-              </span>
-            </label>
-          ))}
-      </div>
-    </div>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">Context Sources</CardTitle>
+          <Badge variant="secondary">~{Math.round(estimatedTokens)} tokens</Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <ScrollArea className="h-[400px] pr-4">
+          <div className="space-y-2">
+            {availableNodes
+              .filter(n => n.id !== nodeId)
+              .map(node => (
+                <label
+                  key={node.id}
+                  className="flex items-start gap-3 p-3 rounded-lg border hover:bg-accent cursor-pointer"
+                >
+                  <Checkbox
+                    checked={selectedSources.has(node.id)}
+                    onCheckedChange={() => toggleSource(node.id)}
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium text-sm">{node.data.label}</div>
+                    <div className="text-xs text-muted-foreground line-clamp-2">
+                      {node.data.content || 'No content'}
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="text-xs">
+                    {Math.round((node.data.content?.length || 0) / 4)}
+                  </Badge>
+                </label>
+              ))}
+          </div>
+        </ScrollArea>
+      </CardContent>
+    </Card>
   );
 }
 ```
 
-**Integration in ChatNode:**
-
-Add a "Context" button in the header that opens a modal with the ContextSourcesPanel.
-
-**Complexity:** Medium
+**Install:**
+```bash
+npx shadcn@latest add checkbox scroll-area
+```
 
 ---
 
-## 4.3 Conversation Branching
-
-**New Files:**
-- `app/components/BranchButton.tsx`
-
-**Modified Files:**
-- `app/components/nodes/ChatNode.tsx`
+## 3.3 Conversation Branching
 
 **Implementation:**
 
 ```typescript
-// app/components/BranchButton.tsx
-interface BranchButtonProps {
+// app/components/nodes/BranchButton.tsx
+import { Button } from '@/components/ui/button';
+import { GitBranch } from 'lucide-react';
+import { useReactFlow } from '@xyflow/react';
+
+export function BranchButton({
+  nodeId,
+  conversationThread,
+  label
+}: {
   nodeId: string;
-  conversationThread: ConversationMessage[];
+  conversationThread: any[];
   label: string;
-  onBranch: (newNodeId: string) => void;
-}
+}) {
+  const { getNode, addNodes, addEdges } = useReactFlow();
 
-export function BranchButton({ nodeId, conversationThread, label, onBranch }: BranchButtonProps) {
   const createBranch = () => {
-    // Create new chat node
-    const newNode = createNode(NodeType.CHAT, {
-      x: position.x + 600,
-      y: position.y,
-    }, {
-      label: `${label} (Branch)`,
-      conversationThread: [...conversationThread], // Clone thread
-    });
+    const parentNode = getNode(nodeId);
+    if (!parentNode) return;
 
-    // Add node to canvas
-    addNode(newNode);
-
-    // Create edge from parent
-    const edge = {
-      id: `${nodeId}-${newNode.id}`,
-      source: nodeId,
-      target: newNode.id,
-      type: 'context',
-      data: { sharesContext: true },
+    const newNodeId = `${nodeId}-branch-${Date.now()}`;
+    const newNode = {
+      id: newNodeId,
+      type: 'chat',
+      position: {
+        x: parentNode.position.x + 600,
+        y: parentNode.position.y,
+      },
+      data: {
+        label: `${label} (Branch)`,
+        conversationThread: [...conversationThread],
+      },
     };
-    addEdge(edge);
 
-    onBranch(newNode.id);
+    addNodes(newNode);
+    addEdges({
+      id: `${nodeId}-${newNodeId}`,
+      source: nodeId,
+      target: newNodeId,
+      type: 'contextual',
+      data: {
+        sharesContext: true,
+        connectionType: 'expands',
+        isBranch: true,
+      },
+      animated: true,
+      style: { strokeDasharray: '5,5', stroke: '#a855f6' },
+    });
   };
 
   return (
-    <button
+    <Button
+      size="sm"
+      variant="outline"
       onClick={createBranch}
-      className="px-2 py-1 text-xs bg-purple-600 hover:bg-purple-700 rounded flex items-center gap-1"
-      title="Branch conversation from this point"
+      className="gap-1"
     >
-      <GitBranchIcon className="w-3 h-3" />
+      <GitBranch className="h-3 w-3" />
       Branch
-    </button>
+    </Button>
   );
 }
 ```
 
-**Add to ChatNode header:**
+---
+
+## Deliverables - Phase 3
+
+✅ Drag-to-connect between nodes
+✅ Connection type selector (leads-to, contradicts, etc.)
+✅ Context sharing toggle per edge
+✅ Context sources panel with token estimation
+✅ Branch conversation button
+✅ Visual branch indicators
+
+**Success Criteria:**
+- Users can manually draw connections
+- Context flow is clearly indicated
+- Connection types are visually distinct
+- Branching preserves conversation history
+
+---
+
+# PHASE 4: Infinite Canvas & Navigation
+**Priority:** 🟡 Important
+**Estimated Time:** 1 week
+**Goal:** Truly infinite canvas with excellent navigation
+
+## 4.1 Infinite Canvas Setup
+
+**Implementation in RabbitFlow.tsx:**
 
 ```typescript
-// ChatNode.tsx
-<BaseNodeHeader>
-  <input value={data.label} ... />
-  <div className="ml-auto flex gap-2">
-    <BranchButton
-      nodeId={id}
-      conversationThread={messages}
-      label={data.label}
-      onBranch={(newId) => {/* Optional: focus new node */}}
-    />
-  </div>
-</BaseNodeHeader>
+import { MiniMap, Controls, Background, BackgroundVariant } from '@xyflow/react';
+
+<ReactFlow
+  nodes={nodes}
+  edges={edges}
+  onNodesChange={onNodesChange}
+  onEdgesChange={onEdgesChange}
+
+  // Infinite canvas settings
+  minZoom={0.1}
+  maxZoom={2}
+  translateExtent={[
+    [-Infinity, -Infinity],
+    [Infinity, Infinity]
+  ]}
+  nodeExtent={[
+    [-Infinity, -Infinity],
+    [Infinity, Infinity]
+  ]}
+
+  // Better panning
+  panOnDrag={true}
+  panOnScroll={false}
+  zoomOnScroll={true}
+  zoomOnPinch={true}
+  zoomOnDoubleClick={false}
+  autoPanOnNodeDrag={true}
+
+  fitView
+>
+  {/* Minimap */}
+  <MiniMap
+    nodeColor={(node) => {
+      const colors = {
+        chat: '#3b82f6',
+        note: '#10b981',
+        query: '#a855f7',
+        thought: '#f59e0b',
+      };
+      return colors[node.type] || '#6b7280';
+    }}
+    maskColor="rgba(0, 0, 0, 0.6)"
+    className="!bg-background !border-border"
+    position="bottom-right"
+  />
+
+  {/* Controls */}
+  <Controls
+    position="top-right"
+    showZoom={true}
+    showFitView={true}
+    showInteractive={true}
+    className="!bg-background !border-border !shadow-lg"
+  />
+
+  {/* Background */}
+  <Background
+    color="hsl(var(--muted))"
+    gap={16}
+    variant={BackgroundVariant.Dots}
+  />
+</ReactFlow>
 ```
-
-**Visual Branch Indicators:**
-
-Use different edge styles for branches:
-
-```typescript
-// Custom edge styling based on metadata
-const edgeStyle = edge.data?.isBranch
-  ? { strokeDasharray: '5,5', stroke: '#a855f7' } // Purple dashed
-  : { stroke: '#3b82f6' }; // Blue solid
-```
-
-**Complexity:** Medium
 
 ---
 
 ## Deliverables - Phase 4
 
-✅ Manual connection drawing
-✅ Context toggle per edge
-✅ Context sources panel with token estimation
-✅ Branch conversation button
-✅ Visual branch indicators
-✅ Context building from connected nodes
-
-**Success Criteria:**
-- Users can draw connections between any nodes
-- Context sharing can be toggled per connection
-- Branching creates independent conversation threads
-- Context sources are clearly visible and configurable
+✅ Infinite canvas (no boundaries)
+✅ Minimap with color-coded nodes
+✅ Zoom controls
+✅ Fit view functionality
+✅ Dot grid background
 
 ---
 
-# PHASE 5: Search, PDF, & Export
+# PHASE 5: Exploration Tools & Power Features
 **Priority:** 🟡 Important
-**Estimated Time:** 2-3 weeks
-**Dependencies:** Phase 1, Phase 2
+**Estimated Time:** 2 weeks
+**Goal:** Advanced features for power users
 
-## Goals
-- Canvas-wide search functionality
-- PDF upload and display
-- JSON export/import
-- Markdown export
+## 5.1 Canvas Search (Cmd+K)
 
----
-
-## 5.1 Canvas Search
-
-**New Files:**
-- `app/components/CanvasSearch.tsx`
-- `app/hooks/useSearch.ts`
-
-**Implementation:**
+**Component:**
 
 ```typescript
-// app/hooks/useSearch.ts
-export function useSearch(nodes: Node[]) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Node[]>([]);
-  const [currentResultIndex, setCurrentResultIndex] = useState(0);
+// app/components/search/CanvasSearch.tsx
+import { useState, useEffect } from 'react';
+import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { useReactFlow } from '@xyflow/react';
 
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
-    const query = searchQuery.toLowerCase();
-    const results = nodes.filter(node => {
-      const data = node.data as BaseNodeData;
-      return (
-        data.label?.toLowerCase().includes(query) ||
-        data.content?.toLowerCase().includes(query)
-      );
-    });
-
-    setSearchResults(results);
-    setCurrentResultIndex(0);
-  }, [searchQuery, nodes]);
-
-  const goToResult = (index: number) => {
-    if (searchResults.length === 0) return;
-
-    const result = searchResults[index];
-    if (!result) return;
-
-    // Center on node
-    const reactFlowInstance = useReactFlow();
-    reactFlowInstance.fitView({
-      nodes: [{ id: result.id }],
-      duration: 400,
-      padding: 0.3,
-    });
-
-    // Highlight node temporarily
-    updateNodeData(result.id, {
-      ...result.data,
-      isHighlighted: true,
-    });
-
-    setTimeout(() => {
-      updateNodeData(result.id, {
-        ...result.data,
-        isHighlighted: false,
-      });
-    }, 2000);
-  };
-
-  const nextResult = () => {
-    const nextIndex = (currentResultIndex + 1) % searchResults.length;
-    setCurrentResultIndex(nextIndex);
-    goToResult(nextIndex);
-  };
-
-  const prevResult = () => {
-    const prevIndex = currentResultIndex === 0
-      ? searchResults.length - 1
-      : currentResultIndex - 1;
-    setCurrentResultIndex(prevIndex);
-    goToResult(prevIndex);
-  };
-
-  return {
-    searchQuery,
-    setSearchQuery,
-    searchResults,
-    currentResultIndex,
-    nextResult,
-    prevResult,
-    goToResult,
-  };
-}
-```
-
-```typescript
-// app/components/CanvasSearch.tsx
 export function CanvasSearch({ nodes }: { nodes: Node[] }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const {
-    searchQuery,
-    setSearchQuery,
-    searchResults,
-    currentResultIndex,
-    nextResult,
-    prevResult,
-  } = useSearch(nodes);
+  const [open, setOpen] = useState(false);
+  const { fitView } = useReactFlow();
 
-  // Cmd/Ctrl + K to open
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setIsOpen(true);
-      }
-      if (e.key === 'Escape') {
-        setIsOpen(false);
+        setOpen(true);
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', down);
+    return () => document.removeEventListener('keydown', down);
   }, []);
 
-  if (!isOpen) return null;
+  const goToNode = (nodeId: string) => {
+    fitView({ nodes: [{ id: nodeId }], duration: 400, padding: 0.3 });
+    setOpen(false);
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center pt-20">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg w-[600px] shadow-2xl">
-        <div className="p-4 border-b border-zinc-800 flex items-center gap-2">
-          <SearchIcon className="w-5 h-5 text-zinc-400" />
-          <input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search nodes..."
-            className="flex-1 bg-transparent border-none outline-none text-lg"
-            autoFocus
-          />
-          {searchResults.length > 0 && (
-            <div className="flex items-center gap-2 text-sm text-zinc-400">
-              <span>
-                {currentResultIndex + 1} / {searchResults.length}
+    <CommandDialog open={open} onOpenChange={setOpen}>
+      <CommandInput placeholder="Search nodes..." />
+      <CommandList>
+        <CommandEmpty>No results found.</CommandEmpty>
+        <CommandGroup heading="Nodes">
+          {nodes.map((node) => (
+            <CommandItem
+              key={node.id}
+              onSelect={() => goToNode(node.id)}
+            >
+              <span className="font-medium">{node.data.label}</span>
+              <span className="ml-2 text-sm text-muted-foreground truncate">
+                {node.data.content?.slice(0, 60)}
               </span>
-              <button onClick={prevResult} className="p-1 hover:bg-zinc-800 rounded">
-                <ChevronUpIcon className="w-4 h-4" />
-              </button>
-              <button onClick={nextResult} className="p-1 hover:bg-zinc-800 rounded">
-                <ChevronDownIcon className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-          <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-zinc-800 rounded">
-            <XIcon className="w-4 h-4" />
-          </button>
-        </div>
-
-        {searchResults.length > 0 && (
-          <div className="max-h-96 overflow-y-auto">
-            {searchResults.map((node, index) => (
-              <button
-                key={node.id}
-                onClick={() => {
-                  goToResult(index);
-                  setIsOpen(false);
-                }}
-                className={`w-full p-3 text-left hover:bg-zinc-800 border-b border-zinc-800 ${
-                  index === currentResultIndex ? 'bg-zinc-800' : ''
-                }`}
-              >
-                <div className="font-medium">{node.data.label}</div>
-                <div className="text-sm text-zinc-400 truncate">
-                  {node.data.content?.slice(0, 100)}...
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {searchQuery && searchResults.length === 0 && (
-          <div className="p-8 text-center text-zinc-400">
-            No nodes found matching "{searchQuery}"
-          </div>
-        )}
-      </div>
-    </div>
+            </CommandItem>
+          ))}
+        </CommandGroup>
+      </CommandList>
+    </CommandDialog>
   );
 }
 ```
 
-**Features:**
-- Cmd/Ctrl + K to open
-- Search by node label or content
-- Navigate results with arrow buttons or Enter
-- Automatically centers on result
-- Temporary highlight animation
-
-**Complexity:** Low-Medium
-
----
-
-## 5.2 PDF Processing
-
-**New Files:**
-- `app/components/nodes/PDFNode.tsx`
-- `app/lib/pdfExtractor.ts`
-
-**Dependencies:**
+**Install:**
 ```bash
-npm install pdfjs-dist
-npm install --save-dev @types/pdfjs-dist
+npx shadcn@latest add command
 ```
 
-**Implementation:**
+---
+
+## 5.2 Node Templates
+
+**Component:**
 
 ```typescript
-// app/lib/pdfExtractor.ts
-import * as pdfjsLib from 'pdfjs-dist';
+// app/components/templates/NodeTemplates.tsx
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Card } from '@/components/ui/card';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+const templates = [
+  {
+    id: 'research-question',
+    name: 'Research Question',
+    description: 'Structured research question template',
+    nodeType: 'query',
+    content: '## Research Question\n\n**Main Question:** \n\n**Sub-questions:**\n1. \n2. \n3. ',
+  },
+  {
+    id: 'meeting-notes',
+    name: 'Meeting Notes',
+    description: 'Structured meeting notes',
+    nodeType: 'note',
+    content: '## Meeting Notes\n\n**Date:** \n**Attendees:** \n\n### Agenda\n- \n\n### Discussion\n\n### Action Items\n- [ ] ',
+  },
+  // ... more templates
+];
 
-export async function extractPDFText(file: File): Promise<{
-  text: string;
-  numPages: number;
-  metadata: any;
-}> {
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
-  const metadata = await pdf.getMetadata();
-  const numPages = pdf.numPages;
-
-  let fullText = '';
-
-  for (let i = 1; i <= numPages; i++) {
-    const page = await pdf.getPage(i);
-    const textContent = await page.getTextContent();
-    const pageText = textContent.items
-      .map((item: any) => item.str)
-      .join(' ');
-    fullText += `\n--- Page ${i} ---\n${pageText}`;
-  }
-
-  return {
-    text: fullText,
-    numPages,
-    metadata: metadata.info,
-  };
-}
-
-export async function renderPDFPage(
-  file: File,
-  pageNumber: number,
-  canvas: HTMLCanvasElement
-): Promise<void> {
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  const page = await pdf.getPage(pageNumber);
-
-  const viewport = page.getViewport({ scale: 1.5 });
-  const context = canvas.getContext('2d')!;
-
-  canvas.width = viewport.width;
-  canvas.height = viewport.height;
-
-  await page.render({
-    canvasContext: context,
-    viewport,
-  }).promise;
-}
-```
-
-```typescript
-// app/components/nodes/PDFNode.tsx
-interface PDFNodeData extends BaseNodeData {
-  type: NodeType.PDF;
-  pdfFile: string;        // Base64 or blob URL
-  extractedText: string;
-  numPages: number;
-  currentPage: number;
-}
-
-export function PDFNode({ id, data }: NodeProps<PDFNodeData>) {
-  const [currentPage, setCurrentPage] = useState(data.currentPage || 1);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    if (!canvasRef.current || !data.pdfFile) return;
-
-    // Reconstruct File from base64
-    const blob = base64ToBlob(data.pdfFile);
-    const file = new File([blob], 'document.pdf', { type: 'application/pdf' });
-
-    renderPDFPage(file, currentPage, canvasRef.current);
-  }, [currentPage, data.pdfFile]);
-
+export function NodeTemplates({ onCreateFromTemplate }: {
+  onCreateFromTemplate: (template: any) => void;
+}) {
   return (
-    <BaseNode className="w-[600px]">
-      <BaseNodeHeader>
-        <input
-          value={data.label}
-          onChange={(e) => updateNodeData(id, { ...data, label: e.target.value })}
-          className="bg-transparent border-none outline-none w-full"
-        />
-      </BaseNodeHeader>
-
-      <BaseNodeContent className="h-[700px]">
-        <div className="flex flex-col h-full">
-          {/* PDF Viewer */}
-          <div className="flex-1 overflow-auto bg-zinc-800 flex items-center justify-center">
-            <canvas ref={canvasRef} />
-          </div>
-
-          {/* Page Controls */}
-          <div className="flex items-center justify-between p-2 border-t border-zinc-700">
-            <button
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1 bg-zinc-800 rounded hover:bg-zinc-700 disabled:opacity-50"
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline">Use Template</Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Node Templates</DialogTitle>
+        </DialogHeader>
+        <div className="grid grid-cols-2 gap-4">
+          {templates.map((template) => (
+            <Card
+              key={template.id}
+              className="p-4 cursor-pointer hover:bg-accent"
+              onClick={() => onCreateFromTemplate(template)}
             >
-              Previous
-            </button>
-
-            <span className="text-sm">
-              Page {currentPage} / {data.numPages}
-            </span>
-
-            <button
-              onClick={() => setCurrentPage(Math.min(data.numPages, currentPage + 1))}
-              disabled={currentPage === data.numPages}
-              className="px-3 py-1 bg-zinc-800 rounded hover:bg-zinc-700 disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
+              <h4 className="font-semibold">{template.name}</h4>
+              <p className="text-sm text-muted-foreground">{template.description}</p>
+            </Card>
+          ))}
         </div>
-      </BaseNodeContent>
-
-      <BaseNodeFooter>
-        <LabeledHandle type="target" position={Position.Left} />
-        <LabeledHandle type="source" position={Position.Right} label="Text" />
-      </BaseNodeFooter>
-    </BaseNode>
+      </DialogContent>
+    </Dialog>
   );
 }
 ```
 
-**PDF Upload Flow:**
-1. User clicks "Upload PDF" in node creation toolbar
-2. File picker opens
-3. Extract text in background
-4. Create PDFNode with embedded file (base64)
-5. Extracted text available as context for connected nodes
-
-**Complexity:** Medium-High
-
 ---
 
-## 5.3 JSON Export/Import
-
-**New Files:**
-- `app/lib/export/jsonExporter.ts`
-- `app/lib/export/jsonImporter.ts`
-- `app/components/ExportDialog.tsx`
+## 5.3 Export/Import
 
 **Implementation:**
 
 ```typescript
-// app/lib/export/jsonExporter.ts
-export interface ExportData {
-  version: string;
-  exportedAt: Date;
-  canvas: Canvas;
-  state: CanvasState;
-}
+// app/components/export/ExportDialog.tsx
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Download, Upload } from 'lucide-react';
 
-export async function exportCanvasAsJSON(canvasId: string): Promise<string> {
-  const db = await initDB();
-  const canvas = await db.get('canvases', canvasId);
-  const state = await db.get('canvasStates', canvasId);
-  const todos = await db.getAllFromIndex('todos', 'by-canvas', canvasId);
-
-  if (!canvas || !state) {
-    throw new Error('Canvas not found');
-  }
-
-  const exportData: ExportData = {
-    version: '1.0.0',
-    exportedAt: new Date(),
-    canvas,
-    state: {
-      ...state,
-      todos,
-    },
-  };
-
-  return JSON.stringify(exportData, null, 2);
-}
-
-export function downloadJSON(json: string, filename: string) {
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-```
-
-```typescript
-// app/lib/export/jsonImporter.ts
-export async function importCanvasFromJSON(json: string): Promise<string> {
-  const data: ExportData = JSON.parse(json);
-
-  // Validate version
-  if (data.version !== '1.0.0') {
-    throw new Error('Unsupported export version');
-  }
-
-  const db = await initDB();
-
-  // Generate new canvas ID
-  const newCanvasId = generateId();
-
-  // Import canvas
-  const newCanvas: Canvas = {
-    ...data.canvas,
-    id: newCanvasId,
-    name: `${data.canvas.name} (Imported)`,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-
-  await db.add('canvases', newCanvas);
-
-  // Import state
-  const newState: CanvasState = {
-    ...data.state,
-    canvasId: newCanvasId,
-  };
-
-  await db.add('canvasStates', newState);
-
-  // Import todos
-  if (data.state.todos) {
-    for (const todo of data.state.todos) {
-      await db.add('todos', {
-        ...todo,
-        id: generateId(),
-        canvasId: newCanvasId,
-      });
-    }
-  }
-
-  return newCanvasId;
-}
-```
-
-```typescript
-// app/components/ExportDialog.tsx
-export function ExportDialog({ canvasId, canvasName }: { canvasId: string; canvasName: string }) {
-  const [isOpen, setIsOpen] = useState(false);
-
+export function ExportDialog({ canvasId, canvasName }: {
+  canvasId: string;
+  canvasName: string;
+}) {
   const handleExportJSON = async () => {
     const json = await exportCanvasAsJSON(canvasId);
-    downloadJSON(json, `${canvasName.replace(/\s/g, '-')}.json`);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${canvasName}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
-  const handleImportJSON = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const json = await file.text();
-    const newCanvasId = await importCanvasFromJSON(json);
-
-    // Switch to imported canvas
-    window.location.href = `/?canvas=${newCanvasId}`;
+  const handleExportMarkdown = async () => {
+    const markdown = await exportCanvasAsMarkdown(canvasId);
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${canvasName}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
-    <>
-      <button onClick={() => setIsOpen(true)} className="...">
-        Export/Import
-      </button>
-
-      {isOpen && (
-        <Modal onClose={() => setIsOpen(false)}>
-          <div className="p-6 space-y-4">
-            <h2 className="text-xl font-bold">Export & Import</h2>
-
-            <div className="space-y-2">
-              <h3 className="font-semibold">Export</h3>
-              <button
-                onClick={handleExportJSON}
-                className="w-full px-4 py-2 bg-blue-600 rounded hover:bg-blue-700"
-              >
-                Export as JSON
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="font-semibold">Import</h3>
-              <label className="block">
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={handleImportJSON}
-                  className="hidden"
-                />
-                <div className="w-full px-4 py-2 bg-green-600 rounded hover:bg-green-700 text-center cursor-pointer">
-                  Import from JSON
-                </div>
-              </label>
-            </div>
-          </div>
-        </Modal>
-      )}
-    </>
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline">Export</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Export Canvas</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <Button className="w-full" onClick={handleExportJSON}>
+            <Download className="mr-2 h-4 w-4" />
+            Export as JSON
+          </Button>
+          <Button className="w-full" variant="outline" onClick={handleExportMarkdown}>
+            <Download className="mr-2 h-4 w-4" />
+            Export as Markdown
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 ```
-
-**Complexity:** Low-Medium
-
----
-
-## 5.4 Markdown Export
-
-**New Files:**
-- `app/lib/export/markdownExporter.ts`
-
-**Implementation:**
-
-```typescript
-// app/lib/export/markdownExporter.ts
-export async function exportCanvasAsMarkdown(canvasId: string): Promise<string> {
-  const db = await initDB();
-  const canvas = await db.get('canvases', canvasId);
-  const state = await db.get('canvasStates', canvasId);
-
-  if (!canvas || !state) {
-    throw new Error('Canvas not found');
-  }
-
-  let markdown = `# ${canvas.name}\n\n`;
-
-  if (canvas.description) {
-    markdown += `${canvas.description}\n\n`;
-  }
-
-  markdown += `**Created:** ${canvas.createdAt.toLocaleDateString()}\n`;
-  markdown += `**Last Updated:** ${canvas.updatedAt.toLocaleDateString()}\n`;
-  markdown += `**Nodes:** ${state.nodes.length}\n\n`;
-  markdown += `---\n\n`;
-
-  // Sort nodes by creation date
-  const sortedNodes = [...state.nodes].sort((a, b) => {
-    const aDate = new Date(a.data.createdAt || 0);
-    const bDate = new Date(b.data.createdAt || 0);
-    return aDate.getTime() - bDate.getTime();
-  });
-
-  for (const node of sortedNodes) {
-    const data = node.data as BaseNodeData;
-
-    markdown += `## ${data.label}\n\n`;
-
-    if (data.type === NodeType.CHAT && data.conversationThread) {
-      markdown += `**Type:** Chat\n\n`;
-
-      for (const msg of data.conversationThread) {
-        markdown += `**${msg.role === 'user' ? 'User' : 'Assistant'}:**\n\n`;
-        markdown += `${msg.content}\n\n`;
-      }
-    } else {
-      markdown += `**Type:** ${data.type}\n\n`;
-      markdown += `${data.content}\n\n`;
-    }
-
-    // Add sources if available
-    if (data.sources && data.sources.length > 0) {
-      markdown += `**Sources:**\n\n`;
-      for (const source of data.sources) {
-        markdown += `- [${source.title}](${source.url})\n`;
-      }
-      markdown += `\n`;
-    }
-
-    markdown += `---\n\n`;
-  }
-
-  // Add todos
-  const todos = await db.getAllFromIndex('todos', 'by-canvas', canvasId);
-  if (todos.length > 0) {
-    markdown += `## Todo List\n\n`;
-    for (const todo of todos) {
-      markdown += `- [${todo.completed ? 'x' : ' '}] ${todo.content}\n`;
-    }
-  }
-
-  return markdown;
-}
-
-export function downloadMarkdown(markdown: string, filename: string) {
-  const blob = new Blob([markdown], { type: 'text/markdown' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-```
-
-**Add to ExportDialog:**
-
-```typescript
-const handleExportMarkdown = async () => {
-  const markdown = await exportCanvasAsMarkdown(canvasId);
-  downloadMarkdown(markdown, `${canvasName.replace(/\s/g, '-')}.md`);
-};
-```
-
-**Complexity:** Low
 
 ---
 
 ## Deliverables - Phase 5
 
-✅ Canvas search with Cmd/Ctrl+K
-✅ PDF upload and display node
-✅ PDF text extraction for context
-✅ JSON export/import
-✅ Markdown export
-✅ Export dialog UI
-
-**Success Criteria:**
-- Search finds nodes by content
-- PDFs display correctly with page navigation
-- Exported JSON can be re-imported
-- Markdown export is readable and well-formatted
+✅ Canvas search with Cmd+K
+✅ Node templates library
+✅ Export to JSON/Markdown
+✅ Import from JSON
+✅ Keyboard shortcuts panel
 
 ---
 
-# PHASE 6: Advanced Features & Polish
+# PHASE 6: Polish & Performance
 **Priority:** 🟢 Enhancement
-**Estimated Time:** 2-3 weeks
-**Dependencies:** All previous phases
+**Estimated Time:** 1-2 weeks
 
-## Goals
-- System prompt customization per node
-- Image generation integration
-- Voice input
-- Todo list integration
-- Performance optimization
+## 6.1 Animations & Transitions
 
----
-
-## 6.1 System Prompt Customization
-
-**New Files:**
-- `app/components/SystemPromptEditor.tsx`
-
-**Modified Files:**
-- `app/components/nodes/ChatNode.tsx`
-
-**Implementation:**
+**Using GSAP (already installed):**
 
 ```typescript
-// app/components/SystemPromptEditor.tsx
-export function SystemPromptEditor({
-  nodeId,
-  currentPrompt,
-  onSave,
-}: {
-  nodeId: string;
-  currentPrompt?: string;
-  onSave: (prompt: string) => void;
-}) {
-  const [prompt, setPrompt] = useState(currentPrompt || '');
-  const [templates, setTemplates] = useState<PromptTemplate[]>([]);
-
-  useEffect(() => {
-    // Load saved templates from localStorage
-    const saved = localStorage.getItem('promptTemplates');
-    if (saved) {
-      setTemplates(JSON.parse(saved));
-    }
-  }, []);
-
-  const saveAsTemplate = () => {
-    const name = window.prompt('Template name:');
-    if (!name) return;
-
-    const newTemplate = { name, content: prompt };
-    const updated = [...templates, newTemplate];
-    setTemplates(updated);
-    localStorage.setItem('promptTemplates', JSON.stringify(updated));
-  };
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium mb-2">System Prompt</label>
-        <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          className="w-full h-40 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg"
-          placeholder="You are a helpful assistant..."
-        />
-      </div>
-
-      {templates.length > 0 && (
-        <div>
-          <label className="block text-sm font-medium mb-2">Templates</label>
-          <div className="space-y-1">
-            {templates.map((template, i) => (
-              <button
-                key={i}
-                onClick={() => setPrompt(template.content)}
-                className="w-full px-3 py-2 text-left bg-zinc-800 hover:bg-zinc-700 rounded"
-              >
-                {template.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="flex gap-2">
-        <button
-          onClick={() => onSave(prompt)}
-          className="flex-1 px-4 py-2 bg-blue-600 rounded hover:bg-blue-700"
-        >
-          Save
-        </button>
-        <button
-          onClick={saveAsTemplate}
-          className="px-4 py-2 bg-zinc-700 rounded hover:bg-zinc-600"
-        >
-          Save as Template
-        </button>
-      </div>
-    </div>
-  );
-}
-```
-
-**Integration in ChatNode:**
-
-```typescript
-// Add button to header
-<button
-  onClick={() => setShowPromptEditor(true)}
-  className="p-1 hover:bg-zinc-800 rounded"
-  title="Edit system prompt"
->
-  <SettingsIcon className="w-4 h-4" />
-</button>
-
-// In sendMessage, prepend system prompt
-const messages = [
-  ...(data.systemPrompt ? [{ role: 'system', content: data.systemPrompt }] : []),
-  ...conversationThread,
-  userMessage,
-];
-```
-
-**Complexity:** Low-Medium
-
----
-
-## 6.2 Image Generation Integration
-
-**New Files:**
-- `app/components/nodes/ImageNode.tsx`
-- `app/api/image/generate/route.ts`
-
-**Dependencies:**
-```bash
-npm install openai  # Or other image gen API
-```
-
-**Implementation:**
-
-```typescript
-// app/api/image/generate/route.ts
-import { OpenAI } from 'openai';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-export async function POST(req: Request) {
-  const { prompt } = await req.json();
-
-  try {
-    const response = await openai.images.generate({
-      model: "dall-e-3",
-      prompt,
-      n: 1,
-      size: "1024x1024",
-    });
-
-    return Response.json({
-      imageUrl: response.data[0].url,
-      revisedPrompt: response.data[0].revised_prompt,
-    });
-  } catch (error) {
-    console.error('Image generation error:', error);
-    return Response.json({ error: 'Failed to generate image' }, { status: 500 });
-  }
-}
-```
-
-```typescript
-// app/components/nodes/ImageNode.tsx
-interface ImageNodeData extends BaseNodeData {
-  type: NodeType.IMAGE;
-  prompt: string;
-  imageUrl?: string;
-  revisedPrompt?: string;
-}
-
-export function ImageNode({ id, data }: NodeProps<ImageNodeData>) {
-  const [prompt, setPrompt] = useState(data.prompt || '');
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  const generateImage = async () => {
-    setIsGenerating(true);
-
-    try {
-      const response = await fetch('/api/image/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
-      });
-
-      const result = await response.json();
-
-      updateNodeData(id, {
-        ...data,
-        prompt,
-        imageUrl: result.imageUrl,
-        revisedPrompt: result.revisedPrompt,
-      });
-    } catch (error) {
-      console.error('Generation failed:', error);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  return (
-    <BaseNode className="w-[500px]">
-      <BaseNodeHeader>
-        <input
-          value={data.label}
-          onChange={(e) => updateNodeData(id, { ...data, label: e.target.value })}
-          className="bg-transparent border-none outline-none w-full"
-        />
-      </BaseNodeHeader>
-
-      <BaseNodeContent className="h-[600px] flex flex-col">
-        <div className="mb-4">
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Describe the image you want to generate..."
-            className="w-full h-20 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg resize-none"
-          />
-          <button
-            onClick={generateImage}
-            disabled={isGenerating || !prompt.trim()}
-            className="mt-2 w-full px-4 py-2 bg-purple-600 rounded hover:bg-purple-700 disabled:opacity-50"
-          >
-            {isGenerating ? 'Generating...' : 'Generate Image'}
-          </button>
-        </div>
-
-        {data.imageUrl && (
-          <div className="flex-1 flex flex-col">
-            <img
-              src={data.imageUrl}
-              alt={data.prompt}
-              className="w-full h-auto rounded-lg"
-            />
-            {data.revisedPrompt && (
-              <p className="mt-2 text-xs text-zinc-400">
-                Revised: {data.revisedPrompt}
-              </p>
-            )}
-          </div>
-        )}
-      </BaseNodeContent>
-
-      <BaseNodeFooter>
-        <LabeledHandle type="target" position={Position.Left} label="Prompt" />
-        <LabeledHandle type="source" position={Position.Right} label="Image" />
-      </BaseNodeFooter>
-    </BaseNode>
-  );
-}
-```
-
-**Complexity:** Medium
-
----
-
-## 6.3 Voice Input
-
-**New Files:**
-- `app/hooks/useVoiceInput.ts`
-- `app/components/VoiceInputButton.tsx`
-
-**Implementation:**
-
-```typescript
-// app/hooks/useVoiceInput.ts
-export function useVoiceInput(onTranscript: (text: string) => void) {
-  const [isListening, setIsListening] = useState(false);
-  const [transcript, setTranscript] = useState('');
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
-
-  useEffect(() => {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      console.warn('Speech recognition not supported');
-      return;
-    }
-
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-
-    recognition.onresult = (event) => {
-      let interim = '';
-      let final = '';
-
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          final += transcript;
-        } else {
-          interim += transcript;
-        }
-      }
-
-      if (final) {
-        setTranscript(prev => prev + ' ' + final);
-        onTranscript(final);
-      } else {
-        setTranscript(interim);
-      }
-    };
-
-    recognition.onerror = (event) => {
-      console.error('Speech recognition error:', event.error);
-      setIsListening(false);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    recognitionRef.current = recognition;
-
-    return () => {
-      recognition.stop();
-    };
-  }, [onTranscript]);
-
-  const startListening = () => {
-    if (recognitionRef.current && !isListening) {
-      setTranscript('');
-      recognitionRef.current.start();
-      setIsListening(true);
-    }
-  };
-
-  const stopListening = () => {
-    if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    }
-  };
-
-  return {
-    isListening,
-    transcript,
-    startListening,
-    stopListening,
-  };
-}
-```
-
-```typescript
-// app/components/VoiceInputButton.tsx
-export function VoiceInputButton({ onTranscript }: { onTranscript: (text: string) => void }) {
-  const { isListening, transcript, startListening, stopListening } = useVoiceInput(onTranscript);
-
-  return (
-    <div className="relative">
-      <button
-        onClick={isListening ? stopListening : startListening}
-        className={`p-2 rounded-full ${
-          isListening
-            ? 'bg-red-600 animate-pulse'
-            : 'bg-zinc-800 hover:bg-zinc-700'
-        }`}
-        title={isListening ? 'Stop recording' : 'Start voice input'}
-      >
-        <MicIcon className="w-5 h-5" />
-      </button>
-
-      {isListening && transcript && (
-        <div className="absolute bottom-full mb-2 left-0 bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-sm whitespace-nowrap">
-          {transcript}
-        </div>
-      )}
-    </div>
-  );
-}
-```
-
-**Add to ChatNode input area:**
-
-```typescript
-<div className="flex gap-2">
-  <VoiceInputButton onTranscript={(text) => setInput(prev => prev + ' ' + text)} />
-  <input ... />
-  <button>Send</button>
-</div>
-```
-
-**Complexity:** Low-Medium
-
----
-
-## 6.4 Todo List Integration
-
-**New Files:**
-- `app/components/TodoPanel.tsx`
-- `app/hooks/useTodos.ts`
-
-**Implementation:**
-
-```typescript
-// app/hooks/useTodos.ts
-export function useTodos(canvasId: string) {
-  const [todos, setTodos] = useState<Todo[]>([]);
-
-  useEffect(() => {
-    loadTodos();
-  }, [canvasId]);
-
-  const loadTodos = async () => {
-    const db = await initDB();
-    const allTodos = await db.getAllFromIndex('todos', 'by-canvas', canvasId);
-    setTodos(allTodos);
-  };
-
-  const addTodo = async (content: string, nodeId?: string) => {
-    const db = await initDB();
-    const todo: Todo = {
-      id: generateId(),
-      canvasId,
-      nodeId,
-      content,
-      completed: false,
-      priority: 'medium',
-      createdAt: new Date(),
-    };
-
-    await db.add('todos', todo);
-    setTodos(prev => [...prev, todo]);
-  };
-
-  const toggleTodo = async (todoId: string) => {
-    const db = await initDB();
-    const todo = todos.find(t => t.id === todoId);
-    if (!todo) return;
-
-    const updated = { ...todo, completed: !todo.completed };
-    await db.put('todos', updated);
-    setTodos(prev => prev.map(t => t.id === todoId ? updated : t));
-  };
-
-  const deleteTodo = async (todoId: string) => {
-    const db = await initDB();
-    await db.delete('todos', todoId);
-    setTodos(prev => prev.filter(t => t.id !== todoId));
-  };
-
-  return {
-    todos,
-    addTodo,
-    toggleTodo,
-    deleteTodo,
-  };
-}
-```
-
-```typescript
-// app/components/TodoPanel.tsx
-export function TodoPanel({ canvasId }: { canvasId: string }) {
-  const { todos, addTodo, toggleTodo, deleteTodo } = useTodos(canvasId);
-  const [newTodo, setNewTodo] = useState('');
-  const [isOpen, setIsOpen] = useState(false);
-
-  const handleAdd = () => {
-    if (!newTodo.trim()) return;
-    addTodo(newTodo);
-    setNewTodo('');
-  };
-
-  const incompleteTodos = todos.filter(t => !t.completed);
-  const completedTodos = todos.filter(t => t.completed);
-
-  return (
-    <>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed left-4 bottom-4 px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg flex items-center gap-2"
-      >
-        <CheckSquareIcon className="w-4 h-4" />
-        Todos ({incompleteTodos.length})
-      </button>
-
-      {isOpen && (
-        <div className="fixed left-4 bottom-16 w-80 bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl max-h-[600px] flex flex-col">
-          <div className="p-4 border-b border-zinc-800">
-            <h3 className="font-semibold mb-2">Todo List</h3>
-            <div className="flex gap-2">
-              <input
-                value={newTodo}
-                onChange={(e) => setNewTodo(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAdd()}
-                placeholder="Add a todo..."
-                className="flex-1 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded"
-              />
-              <button
-                onClick={handleAdd}
-                className="px-3 py-2 bg-blue-600 rounded hover:bg-blue-700"
-              >
-                Add
-              </button>
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-4 space-y-2">
-            {incompleteTodos.map(todo => (
-              <div
-                key={todo.id}
-                className="flex items-start gap-2 p-2 bg-zinc-800 rounded"
-              >
-                <input
-                  type="checkbox"
-                  checked={false}
-                  onChange={() => toggleTodo(todo.id)}
-                  className="mt-1"
-                />
-                <span className="flex-1">{todo.content}</span>
-                <button
-                  onClick={() => deleteTodo(todo.id)}
-                  className="text-red-500 hover:text-red-400"
-                >
-                  <TrashIcon className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-
-            {completedTodos.length > 0 && (
-              <>
-                <div className="text-sm text-zinc-500 mt-4 mb-2">Completed</div>
-                {completedTodos.map(todo => (
-                  <div
-                    key={todo.id}
-                    className="flex items-start gap-2 p-2 bg-zinc-800/50 rounded opacity-50"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={true}
-                      onChange={() => toggleTodo(todo.id)}
-                      className="mt-1"
-                    />
-                    <span className="flex-1 line-through">{todo.content}</span>
-                    <button
-                      onClick={() => deleteTodo(todo.id)}
-                      className="text-red-500 hover:text-red-400"
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </>
-            )}
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-```
-
-**Complexity:** Low-Medium
-
----
-
-## 6.5 Performance Optimization
-
-**Optimizations:**
-
-1. **Virtual Rendering for Large Graphs**
-```typescript
-// Only render nodes within viewport + buffer
-import { useOnViewportChange } from '@xyflow/react';
-
-function RabbitFlow({ nodes, edges }) {
-  const [visibleNodes, setVisibleNodes] = useState(nodes);
-
-  useOnViewportChange({
-    onChange: (viewport) => {
-      const visible = nodes.filter(node => {
-        // Check if node is within viewport
-        return isNodeVisible(node, viewport);
-      });
-      setVisibleNodes(visible);
-    },
+// Animate node creation
+const animateNodeCreation = (nodeElement: HTMLElement) => {
+  gsap.from(nodeElement, {
+    scale: 0,
+    opacity: 0,
+    duration: 0.3,
+    ease: 'back.out(1.7)',
   });
+};
 
-  return <ReactFlow nodes={visibleNodes} edges={edges} />;
-}
+// Animate edge creation
+const animateEdgeCreation = (edgePath: SVGPathElement) => {
+  const length = edgePath.getTotalLength();
+  gsap.from(edgePath, {
+    strokeDasharray: length,
+    strokeDashoffset: length,
+    duration: 0.5,
+    ease: 'power2.out',
+  });
+};
 ```
 
-2. **Debounced Auto-Save** (already implemented in Phase 1)
+---
 
-3. **Lazy Load Images**
-```typescript
-<img
-  src={imageUrl}
-  loading="lazy"
-  decoding="async"
-/>
-```
+## 6.2 Performance Optimizations
 
-4. **Memoize Node Components**
+**Virtual Rendering:**
+
 ```typescript
-export const ChatNode = memo(({ id, data }: NodeProps<ChatNodeData>) => {
-  // ... component
-}, (prev, next) => {
+import { memo } from 'react';
+
+// Memoize expensive node components
+export const ChatNode = memo(ChatNodeComponent, (prev, next) => {
   return prev.data === next.data;
 });
+
+// Only render visible nodes
+const [visibleNodeIds, setVisibleNodeIds] = useState<Set<string>>(new Set());
+
+useOnViewportChange({
+  onChange: (viewport) => {
+    const visible = nodes
+      .filter(node => isNodeInViewport(node, viewport))
+      .map(n => n.id);
+    setVisibleNodeIds(new Set(visible));
+  },
+});
 ```
-
-5. **IndexedDB Cursor Pagination**
-```typescript
-// Load canvases in batches
-async function loadCanvasesPaginated(limit: number = 20, offset: number = 0) {
-  const db = await initDB();
-  const tx = db.transaction('canvases', 'readonly');
-  const index = tx.store.index('by-updated');
-
-  const canvases: Canvas[] = [];
-  let cursor = await index.openCursor(null, 'prev'); // Newest first
-  let skipped = 0;
-
-  while (cursor && canvases.length < limit) {
-    if (skipped >= offset) {
-      canvases.push(cursor.value);
-    }
-    skipped++;
-    cursor = await cursor.continue();
-  }
-
-  return canvases;
-}
-```
-
-**Complexity:** Medium
 
 ---
 
 ## Deliverables - Phase 6
 
-✅ System prompt editor with templates
-✅ Image generation node (DALL-E integration)
-✅ Voice input with speech recognition
-✅ Todo list panel per canvas
-✅ Performance optimizations
+✅ Smooth animations for node/edge creation
 ✅ Virtual rendering for large graphs
-
-**Success Criteria:**
-- Custom system prompts work per node
-- Image generation produces quality results
-- Voice input transcribes accurately
-- Todos persist and sync with canvas
-- App handles 100+ nodes smoothly
+✅ Optimized re-renders
+✅ Lazy loading for images
+✅ IndexedDB query optimization
 
 ---
 
-# POST-LAUNCH: Future Enhancements
+# Implementation Timeline
 
-## Collaboration Features
-- Real-time multiplayer editing (WebSocket/Yjs)
-- Share canvas via public link
-- Comments on nodes
-- User presence indicators
+## Week 1-2: Phase 1 Foundation
+- Empty canvas & click-to-create
+- Node type system (Chat, Note, Query)
+- Exploration mode selector
 
-## AI Enhancements
-- Multiple AI model selection per node
-- Function calling for tool use
-- RAG (Retrieval Augmented Generation) from canvas
-- Auto-summarization of long conversations
+## Week 3-4: Phase 2 AI Suggestions
+- Suggestion panel
+- Contextual actions
+- Smart connections
 
-## Advanced Canvas Features
-- Canvas templates (research, brainstorming, etc.)
-- Node grouping/containers
-- Sticky notes layer
-- Drawing tools (freehand annotations)
+## Week 5-6: Phase 3 Context Control
+- Manual connections
+- Connection types
+- Context sources panel
+- Branching
 
-## Integrations
-- Import from Notion, Obsidian, Roam
-- Export to presentation format
-- Zapier/Make.com webhooks
-- Browser extension for quick capture
+## Week 7: Phase 4 Infinite Canvas
+- Canvas configuration
+- Minimap & controls
+- Navigation
 
-## Mobile
-- React Native mobile app
-- Touch-optimized interface
-- Offline-first sync
+## Week 8-9: Phase 5 Power Features
+- Canvas search
+- Templates
+- Export/Import
 
----
+## Week 10-11: Phase 6 Polish
+- Animations
+- Performance
+- Bug fixes
 
-# Technical Debt & Testing Strategy
-
-## Unit Tests
-- Node factory functions
-- Context builder
-- Export/import functions
-- IndexedDB operations
-
-## Integration Tests
-- Canvas creation flow
-- Node creation and editing
-- Search functionality
-- Auto-save system
-
-## E2E Tests (Playwright)
-- Complete user journey: create canvas → add nodes → search → export
-- Multi-canvas switching
-- Large graph performance
-
-## Accessibility
-- Keyboard navigation for all features
-- Screen reader support for nodes
-- ARIA labels on interactive elements
-- Focus management in modals
+**Total Timeline:** 10-11 weeks
 
 ---
 
-# Deployment Checklist
+# Success Metrics
 
-## Production Optimizations
-- [ ] Enable Next.js image optimization
-- [ ] Set up CDN for static assets
-- [ ] Implement service worker for offline support
-- [ ] Add error boundaries
-- [ ] Set up Sentry for error tracking
-- [ ] Configure CSP headers
-- [ ] Optimize bundle size (code splitting)
-- [ ] Enable gzip/brotli compression
+## User Agency Indicators
+- 80%+ of nodes created manually (not from AI suggestions)
+- Average 3+ modifications per AI suggestion before acceptance
+- Users spend 70%+ time in Manual or Guided mode
+- High template reuse rate
 
-## Environment Variables
+## Performance Benchmarks
+- Canvas loads <100ms for 50 nodes
+- Handles 200+ nodes smoothly (60fps)
+- Search results <50ms
+- Auto-save doesn't block UI
+
+## Engagement Metrics
+- Average 15+ nodes per canvas
+- 5+ connections between nodes
+- 60%+ canvas revisit rate
+- Template creation by users
+
+---
+
+# Technical Stack Summary
+
+**UI Framework:**
+- shadcn/ui for all UI components
+- React Flow UI for node/edge components
+- Radix UI primitives (via shadcn)
+
+**Visualization:**
+- @xyflow/react for graph rendering
+- Dagre for auto-layout (optional)
+- GSAP for animations
+
+**Data:**
+- IndexedDB (idb library) for persistence
+- React hooks for state management
+
+**AI:**
+- OpenRouter (Gemini) for AI responses
+- Tavily for web search
+
+**Styling:**
+- Tailwind CSS 4
+- CSS variables for theming
+
+---
+
+# Next Steps
+
+1. **Install all shadcn components:**
 ```bash
-# Required
-OPENROUTER_API_KEY=
-TAVILY_API_KEY=
-
-# Optional
-OPENAI_API_KEY=           # For image generation
-NEXT_PUBLIC_POSTHOG_KEY=  # Analytics
-SENTRY_DSN=               # Error tracking
+npx shadcn@latest add button card dialog dropdown-menu input textarea select tooltip badge checkbox scroll-area command context-menu
 ```
 
-## Monitoring
-- Set up PostHog for analytics
-- Track key metrics:
-  - Canvas creation rate
-  - Node creation rate
-  - Search usage
-  - Export frequency
-  - Performance metrics (LCP, FID, CLS)
+2. **Install React Flow UI components:**
+```bash
+npx shadcn@latest add https://ui.reactflow.dev/base-node
+npx shadcn@latest add https://ui.reactflow.dev/labeled-handle
+npx shadcn@latest add https://ui.reactflow.dev/data-edge
+```
 
----
+3. **Start with Phase 1.1:** Empty Canvas Welcome component
 
-# Summary: Implementation Order
-
-## Phase 1 (Weeks 1-3): Foundation
-1. IndexedDB schema & storage layer
-2. Canvas management UI
-3. Auto-save system
-4. Load/restore functionality
-
-## Phase 2 (Weeks 4-6): Node System
-1. Node type architecture
-2. ChatNode & NoteNode components
-3. Click-to-create system
-4. Keyboard shortcuts
-
-## Phase 3 (Weeks 7-8): Canvas
-1. Infinite canvas configuration
-2. Minimap & controls
-3. Navigation toolbar
-
-## Phase 4 (Weeks 9-11): Context & Branching
-1. Manual connections
-2. Context toggle per edge
-3. Context cherry-picking UI
-4. Branch conversation feature
-
-## Phase 5 (Weeks 12-14): Search & Export
-1. Canvas search
-2. PDF processing
-3. JSON export/import
-4. Markdown export
-
-## Phase 6 (Weeks 15-17): Polish
-1. System prompt customization
-2. Image generation
-3. Voice input
-4. Todo list
-5. Performance optimization
-
----
-
-**Total Estimated Timeline:** 17-20 weeks (4-5 months)
-
-**Team Size Recommendation:** 1-2 full-stack developers
-
-**Key Success Metrics:**
-- User can create unlimited canvases ✅
-- State persists reliably ✅
-- Manual node creation works intuitively ✅
-- Context control is granular ✅
-- Export/import maintains data integrity ✅
-- Performance handles 100+ nodes ✅
+Would you like me to begin implementation?

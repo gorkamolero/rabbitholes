@@ -2,7 +2,7 @@
 
 import React, { memo } from 'react';
 import Image from 'next/image';
-import { Position, NodeProps } from '@xyflow/react';
+import { Position, NodeProps, Node } from '@xyflow/react';
 import ReactMarkdown from 'react-markdown';
 import { BounceCards } from '../ui/bounce-cards';
 import {
@@ -13,7 +13,7 @@ import {
 } from '../base-node';
 import { LabeledHandle } from '../labeled-handle';
 
-interface MainNodeData {
+interface MainNodeDataType extends Record<string, unknown> {
   label: string;
   content: string;
   images?: string[];
@@ -23,6 +23,8 @@ interface MainNodeData {
     thumbnail?: string;
   }>;
 }
+
+type MainNodeType = Node<MainNodeDataType>;
 
 const getFaviconUrl = (url: string): string => {
   try {
@@ -41,7 +43,7 @@ const transformStyles = [
   "rotate(15deg) translate(200px, -50px)"
 ];
 
-const MainNode = ({ data }: NodeProps<MainNodeData>) => {
+const MainNode = ({ data }: NodeProps<MainNodeType>) => {
   return (
     <BaseNode className="relative w-[600px] min-h-[500px] max-h-[550px] flex flex-col bg-[#1a1a1a] border-black">
       <LabeledHandle type="target" position={Position.Left} className="absolute left-0 top-1/2 -translate-y-1/2" />

@@ -4,6 +4,7 @@ import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
 import { useEffect } from 'react';
 import { initializeDatabase } from './lib/db/schema';
+import { Toaster } from './components/ui/sonner';
 
 if (typeof window !== 'undefined') {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY || '', {
@@ -22,5 +23,10 @@ export function PHProvider({ children }: { children: React.ReactNode }) {
     initializeDatabase().catch(console.error);
   }, []);
 
-  return <PostHogProvider client={posthog}>{children}</PostHogProvider>;
+  return (
+    <PostHogProvider client={posthog}>
+      {children}
+      <Toaster richColors position="bottom-right" />
+    </PostHogProvider>
+  );
 }
