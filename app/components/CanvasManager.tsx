@@ -152,13 +152,14 @@ export function CanvasManager({
           <Button
             variant="outline"
             className="fixed top-6 left-6 z-50 shadow-lg hover:shadow-xl transition-shadow"
+            suppressHydrationWarning
           >
             <Menu className="w-4 h-4 mr-2" />
             Canvases
           </Button>
         </SheetTrigger>
 
-        <SheetContent side="left" className="w-[400px] sm:w-[540px] flex flex-col p-0">
+        <SheetContent side="left" className="w-[400px] sm:w-[540px] flex flex-col p-0" suppressHydrationWarning>
           <SheetHeader className="px-6 pt-6 pb-4">
             <SheetTitle className="text-2xl">My Canvases</SheetTitle>
             <SheetDescription>
@@ -359,7 +360,7 @@ export function CanvasManager({
 
       {/* Save As Dialog */}
       <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
-        <DialogContent>
+        <DialogContent suppressHydrationWarning>
           <DialogHeader>
             <DialogTitle>Save Canvas As</DialogTitle>
             <DialogDescription>

@@ -55,7 +55,7 @@ export const NodeCreationModal: React.FC<NodeCreationModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px]" suppressHydrationWarning>
         <DialogHeader>
           <DialogTitle className="text-2xl">Create New Node</DialogTitle>
           <DialogDescription>

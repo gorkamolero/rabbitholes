@@ -49,8 +49,8 @@ export function FloatingActionMenu({ onCreateNode }: FloatingActionMenuProps) {
               )}
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="left" className="font-medium">
-            <p>{isOpen ? 'Close menu' : 'Create new node'}</p>
+          <TooltipContent side="left" className="font-medium" suppressHydrationWarning>
+            <p suppressHydrationWarning>{isOpen ? 'Close menu' : 'Create new node'}</p>
           </TooltipContent>
         </Tooltip>
       </div>

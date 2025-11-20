@@ -30,7 +30,7 @@ export function NodeTypeButton({ type, onClick }: NodeTypeButtonProps) {
             <span className="font-medium">{metadata.label}</span>
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="left" className="max-w-[200px]">
+        <TooltipContent side="left" className="max-w-[200px]" suppressHydrationWarning>
           <p>{metadata.description}</p>
         </TooltipContent>
       </Tooltip>
