@@ -227,10 +227,17 @@ npm install
 
 3. Set up environment variables
 ```bash
-# Create .env.local file
-OPENROUTER_API_KEY=your_openrouter_api_key_here
-TAVILY_API_KEY=your_tavily_api_key_here
+# Copy the example file
+cp .env.local.example .env.local
+
+# Edit .env.local and add your API keys:
+# OPENROUTER_API_KEY=your_actual_openrouter_key
+# TAVILY_API_KEY=your_actual_tavily_key
 ```
+
+Get your API keys:
+- OpenRouter: https://openrouter.ai/
+- Tavily: https://tavily.com/
 
 4. Start the development server
 ```bash
