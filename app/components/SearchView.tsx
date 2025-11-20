@@ -265,7 +265,7 @@ const SearchView: React.FC = () => {
   };
 
   // Handle manual node creation
-  const handleCreateNode = (nodeType: NodeType) => {
+  const handleCreateNode = (nodeType: NodeType, position?: { x: number; y: number }) => {
     const nodeId = `${nodeType}-${Date.now()}`;
     const newNode: Node = {
       id: nodeId,
@@ -275,14 +275,19 @@ const SearchView: React.FC = () => {
         content: '',
         conversationThread: [],
       },
-      position: {
-        // Center of viewport - will be adjusted by ReactFlow
+      position: position || {
+        // Center of viewport if no position provided
         x: window.innerWidth / 2 - 200,
         y: window.innerHeight / 2 - 200,
       },
     };
 
     setNodes((prevNodes) => [...prevNodes, newNode]);
+  };
+
+  // Handle node creation at specific position (from context menu)
+  const handleCreateNodeAtPosition = (nodeType: NodeType, position: { x: number; y: number }) => {
+    handleCreateNode(nodeType, position);
   };
 
   const handleRequestSuggestions = async () => {
@@ -529,6 +534,7 @@ const SearchView: React.FC = () => {
         nodeTypes={nodeTypes}
         onNodeClick={handleNodeClick}
         onConnectEnd={handleConnectEnd}
+        onCreateNodeAtPosition={handleCreateNodeAtPosition}
       />
 
       {/* Show welcome screen when canvas is empty */}
