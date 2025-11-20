@@ -8,6 +8,9 @@ import RabbitFlow from './RabbitFlow';
 import MainNode from './nodes/MainNode';
 import { searchRabbitHole, getSuggestions } from '../services/api';
 import { NodeCreationModal } from './NodeCreationModal';
+import { CanvasManager } from './CanvasManager';
+import { useCurrentCanvas, useAutoSave } from '../hooks/useCanvasSync';
+import { createCanvas, loadCanvasState } from '../lib/db/repository';
 
 const dagreGraph = new dagre.graphlib.Graph();
 dagreGraph.setDefaultEdgeLabel(() => ({}));
@@ -256,6 +259,13 @@ const SearchView: React.FC = () => {
   const [modalSourceNode, setModalSourceNode] = useState<Node | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+
+  // Canvas persistence
+  const { currentCanvasId, setCurrentCanvasId } = useCurrentCanvas();
+  const { saving, lastSaved } = useAutoSave(currentCanvasId, nodes, edges, {
+    enabled: currentCanvasId !== null,
+    debounceMs: 2000
+  });
 
   const thothDeckRef = useRef<HTMLDivElement>(null);
   const anubisDeckRef = useRef<HTMLDivElement>(null);
@@ -516,6 +526,42 @@ const SearchView: React.FC = () => {
     }
   };
 
+  // Canvas management handlers
+  const handleNewCanvas = async () => {
+    setNodes([]);
+    setEdges([]);
+    setSearchResult(null);
+    setConversationHistory([]);
+    setCurrentCanvasId(null);
+  };
+
+  const handleLoadCanvas = async (canvasId: string) => {
+    try {
+      const state = await loadCanvasState(canvasId);
+      setNodes(state.nodes);
+      setEdges(state.edges);
+      setCurrentCanvasId(canvasId);
+      // If there are nodes, show the result view
+      if (state.nodes.length > 0) {
+        setSearchResult({ response: '', followUpQuestions: [], sources: [], images: [], contextualQuery: '' });
+      }
+    } catch (error) {
+      console.error('Failed to load canvas:', error);
+      alert('Failed to load canvas');
+    }
+  };
+
+  const handleSaveAs = async (name: string) => {
+    try {
+      const canvas = await createCanvas(name);
+      setCurrentCanvasId(canvas.id);
+      // Save will happen automatically via useAutoSave
+    } catch (error) {
+      console.error('Failed to save canvas:', error);
+      alert('Failed to save canvas');
+    }
+  };
+
   const handleSearch = async () => {
     if (!query.trim()) return;
 
@@ -575,6 +621,12 @@ const SearchView: React.FC = () => {
 
       setNodes(layoutedNodes);
       setEdges(layoutedEdges);
+
+      // Auto-create and save as new canvas if not already saved
+      if (!currentCanvasId) {
+        const canvas = await createCanvas(query);
+        setCurrentCanvasId(canvas.id);
+      }
     } catch (error) {
       console.error('Search failed:', error);
     } finally {
@@ -585,6 +637,12 @@ const SearchView: React.FC = () => {
   if (!searchResult) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-[#0A0A0A]">
+        <CanvasManager
+          currentCanvasId={currentCanvasId}
+          onLoadCanvas={handleLoadCanvas}
+          onNewCanvas={handleNewCanvas}
+          onSaveAs={handleSaveAs}
+        />
         <a
           href="https://github.com/AsyncFuncAI/rabbitholes"
           target="_blank"
@@ -729,6 +787,28 @@ const SearchView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <CanvasManager
+        currentCanvasId={currentCanvasId}
+        onLoadCanvas={handleLoadCanvas}
+        onNewCanvas={handleNewCanvas}
+        onSaveAs={handleSaveAs}
+      />
+      {/* Save Status Indicator */}
+      {currentCanvasId && (
+        <div className="fixed bottom-6 right-6 z-40 px-4 py-2 bg-[#1a1a1a] border border-gray-700 rounded-lg text-sm text-white/60 flex items-center gap-2">
+          {saving ? (
+            <>
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+              <span>Saving...</span>
+            </>
+          ) : lastSaved ? (
+            <>
+              <div className="w-2 h-2 bg-green-500 rounded-full" />
+              <span>Saved {new Date(lastSaved).toLocaleTimeString()}</span>
+            </>
+          ) : null}
+        </div>
+      )}
       <RabbitFlow
         initialNodes={nodes}
         initialEdges={edges}
