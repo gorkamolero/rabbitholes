@@ -6,7 +6,8 @@ import dagre from 'dagre';
 import gsap from 'gsap';
 import RabbitFlow from './RabbitFlow';
 import MainNode from './nodes/MainNode';
-import { searchRabbitHole } from '../services/api';
+import { searchRabbitHole, getSuggestions } from '../services/api';
+import { NodeCreationModal } from './NodeCreationModal';
 
 const dagreGraph = new dagre.graphlib.Graph();
 dagreGraph.setDefaultEdgeLabel(() => ({}));
@@ -250,6 +251,12 @@ const SearchView: React.FC = () => {
   const [currentConcept] = useState<string>('');
   const activeRequestRef = useRef<{ [key: string]: AbortController | null }>({});
 
+  // Modal state for drag-to-create
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalSourceNode, setModalSourceNode] = useState<Node | null>(null);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+
   const thothDeckRef = useRef<HTMLDivElement>(null);
   const anubisDeckRef = useRef<HTMLDivElement>(null);
   const isisDeckRef = useRef<HTMLDivElement>(null);
@@ -363,64 +370,9 @@ const SearchView: React.FC = () => {
           return n;
         });
 
-        // Create new follow-up question nodes
-        const newFollowUpNodes: Node[] = response.followUpQuestions.map((question: string, index: number) => {
-          const uniqueId = `question-${node.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${index}`;
-          return {
-            id: uniqueId,
-            type: 'default',
-            data: {
-              label: question,
-              isExpanded: false,
-              content: '',
-              images: [],
-              sources: []
-            },
-            position: { x: 0, y: 0 },
-            style: {
-              width: questionNodeWidth,
-              background: '#1a1a1a',
-              color: '#fff',
-              border: '1px solid #333',
-              borderRadius: '8px',
-              fontSize: '14px',
-              textAlign: 'left',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-              cursor: 'pointer'
-            }
-          };
-        });
-
-        // Create edges connecting the expanded node to its follow-up questions
-        const newEdges: Edge[] = newFollowUpNodes.map((followUpNode) => ({
-          id: `edge-${followUpNode.id}`,
-          source: node.id,
-          target: followUpNode.id,
-          style: {
-            stroke: 'rgba(248, 248, 248, 0.8)',
-            strokeWidth: 1.5
-          },
-          type: 'smoothstep',
-          animated: true,
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-            color: 'rgba(248, 248, 248, 0.8)'
-          }
-        }));
-
-        // Update edges using functional update to ensure we have the latest state
-        setEdges(prevEdges => {
-          const allEdges = [...prevEdges, ...newEdges];
-
-          // Calculate layout with all nodes and updated edges
-          const allNodes = [...transformedNodes, ...newFollowUpNodes];
-          const { nodes: finalLayoutedNodes } = getLayoutedElements(allNodes, allEdges);
-
-          // Update nodes with final layout
-          setNodes(finalLayoutedNodes);
-
-          return allEdges;
-        });
+        // Relayout the graph with the updated node (no automatic children)
+        const { nodes: finalLayoutedNodes } = getLayoutedElements(transformedNodes, edges);
+        setNodes(finalLayoutedNodes);
       }
     } catch (error: unknown) {
       if (error instanceof Error && error.name !== 'AbortError' && activeRequestRef.current[node.id] === abortController) {
@@ -446,6 +398,119 @@ const SearchView: React.FC = () => {
     } finally {
       if (activeRequestRef.current[node.id] === abortController) {
         activeRequestRef.current[node.id] = null;
+        setIsLoading(false);
+      }
+    }
+  };
+
+  // Handle drag-to-create functionality
+  const handleConnectEnd = (_event: MouseEvent | TouchEvent, connectionState: { fromNode: Node | null }) => {
+    if (connectionState.fromNode) {
+      setModalSourceNode(connectionState.fromNode);
+      setIsModalOpen(true);
+      setSuggestions([]);
+    }
+  };
+
+  const handleRequestSuggestions = async () => {
+    if (!modalSourceNode) return;
+
+    setIsLoadingSuggestions(true);
+    try {
+      // Build conversation history for context
+      const historyForSuggestions = conversationHistory.map(entry => [
+        { role: 'user' as const, content: entry.user || '' },
+        { role: 'assistant' as const, content: entry.assistant || '' }
+      ]).flat();
+
+      const response = await getSuggestions({
+        query: modalSourceNode.data.label,
+        conversationHistory: historyForSuggestions,
+        mode: 'expansive'
+      });
+
+      setSuggestions(response.suggestions || []);
+    } catch (error) {
+      console.error('Failed to fetch suggestions:', error);
+      setSuggestions([]);
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
+
+  const createNodeFromQuestion = async (question: string) => {
+    if (!modalSourceNode) return;
+
+    setIsModalOpen(false);
+    setIsLoading(true);
+
+    const abortController = new AbortController();
+    const nodeId = `question-${modalSourceNode.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    activeRequestRef.current[nodeId] = abortController;
+
+    try {
+      // Update conversation history with the source node's content
+      const newHistoryEntry: ConversationMessage = {
+        user: modalSourceNode.data.label,
+        assistant: modalSourceNode.data.content
+      };
+      setConversationHistory(prev => [...prev, newHistoryEntry]);
+
+      // Create a temporary question node
+      const tempQuestionNode: Node = {
+        id: nodeId,
+        type: 'default',
+        data: {
+          label: question,
+          isExpanded: false,
+          content: '',
+          images: [],
+          sources: []
+        },
+        position: { x: 0, y: 0 },
+        style: {
+          width: questionNodeWidth,
+          background: '#1a1a1a',
+          color: '#fff',
+          border: '1px solid #333',
+          borderRadius: '8px',
+          fontSize: '14px',
+          textAlign: 'left',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+          cursor: 'pointer'
+        }
+      };
+
+      // Create edge connecting source node to new question node
+      const newEdge: Edge = {
+        id: `edge-${nodeId}`,
+        source: modalSourceNode.id,
+        target: nodeId,
+        style: {
+          stroke: 'rgba(248, 248, 248, 0.8)',
+          strokeWidth: 1.5
+        },
+        type: 'smoothstep',
+        animated: true,
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: 'rgba(248, 248, 248, 0.8)'
+        }
+      };
+
+      // Add the node and edge, then relayout
+      setEdges(prevEdges => {
+        const allEdges = [...prevEdges, newEdge];
+        const allNodes = [...nodes, tempQuestionNode];
+        const { nodes: layoutedNodes } = getLayoutedElements(allNodes, allEdges);
+        setNodes(layoutedNodes);
+        return allEdges;
+      });
+    } catch (error) {
+      console.error('Failed to create node:', error);
+    } finally {
+      if (activeRequestRef.current[nodeId] === abortController) {
+        activeRequestRef.current[nodeId] = null;
         setIsLoading(false);
       }
     }
@@ -501,50 +566,11 @@ const SearchView: React.FC = () => {
           isExpanded: true
         }
       };
-      const followUpNodes: Node[] = response.followUpQuestions.map((question: string, index: number) => ({
-        id: `question-${index}`,
-        type: 'default',
-        data: {
-          label: question,
-          isExpanded: false,
-          content: '',
-          images: [],
-          sources: []
-        },
-        position: { x: 0, y: 0 },
-        style: {
-          width: questionNodeWidth,
-          background: '#1a1a1a',
-          color: '#fff',
-          border: '1px solid #333',
-          borderRadius: '8px',
-          fontSize: '14px',
-          textAlign: 'left',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-          cursor: 'pointer'
-        }
-      }));
 
-      const edges: Edge[] = followUpNodes.map((_, index) => ({
-        id: `edge-${index}`,
-        source: 'main',
-        target: `question-${index}`,
-        style: {
-          stroke: 'rgba(248, 248, 248, 0.8)',
-          strokeWidth: 1.5
-        },
-        type: 'smoothstep',
-        animated: true,
-        markerEnd: {
-          type: MarkerType.ArrowClosed,
-          color: 'rgba(248, 248, 248, 0.8)'
-        }
-      }));
-
-
+      // No automatic follow-up nodes - users will drag to create them
       const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
-        [mainNode, ...followUpNodes],
-        edges
+        [mainNode],
+        []
       );
 
       setNodes(layoutedNodes);
@@ -708,6 +734,15 @@ const SearchView: React.FC = () => {
         initialEdges={edges}
         nodeTypes={nodeTypes}
         onNodeClick={handleNodeClick}
+        onConnectEnd={handleConnectEnd}
+      />
+      <NodeCreationModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCreateWithSuggestions={handleRequestSuggestions}
+        onCreateCustom={createNodeFromQuestion}
+        suggestions={suggestions}
+        isLoadingSuggestions={isLoadingSuggestions}
       />
     </div>
   );
